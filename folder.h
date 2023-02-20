@@ -1,6 +1,7 @@
 #pragma once 
 
-#include "detail/utility.h"
+#include "./detail/type_traits.h"
+#include "./detail/utility.h"
 
 #include <utility>
 
@@ -18,9 +19,6 @@ namespace tr
 		struct ApplySideTag {};
 		static constexpr ApplySideTag<FoldSide::Left> apply_left{};
 		static constexpr ApplySideTag<FoldSide::Right> apply_right{};
-
-		template <typename T>
-		using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
 
 		/// @brief A wrapper class to hold either a value type (e.g. T == int)
 		/// or a reference type (e.g. T == int&).
@@ -63,14 +61,12 @@ namespace tr
 			bool = !std::is_reference_v<BinaryOp> && !std::is_final_v<BinaryOp> && std::is_empty_v<BinaryOp>>
 		struct CombinatorStorage : BinaryOp
 		{
-			static constexpr bool is_compressed{ true };
 			Value Value_;
 		};
 
 		template <typename BinaryOp, typename Value>
 		struct CombinatorStorage<BinaryOp, Value, false>
 		{
-			static constexpr bool is_compressed{ false };
 			BinaryOp Operator_;
 			Value Value_;
 		};

@@ -26,5 +26,24 @@ namespace tr
 					return std::move(x);
 			}
 		}
+
+		template <class Base, class U>
+		[[nodiscard]] constexpr auto&& forward_as(U&& x) noexcept
+		{
+			static_assert(
+				!std::is_lvalue_reference_v<Base> && !std::is_rvalue_reference_v<Base>,
+				"Base must not be a reference type");
+
+			static_assert(std::is_same_v<Base, std::remove_cv_t<Base>>,
+						  "Base must not be cv qualified type");
+
+			constexpr bool is_const = std::is_const_v<std::remove_reference_t<U>>;
+			using cv_base_t = std::conditional_t<is_const, Base const, Base>;
+
+			constexpr bool is_lvalue = std::is_lvalue_reference_v<U&&>;
+			using cv_ref_base_t = std::conditional_t<is_lvalue, cv_base_t&, cv_base_t&&>;
+
+			return static_cast<cv_ref_base_t>(x);
+		}
 	}
 }

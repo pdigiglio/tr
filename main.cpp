@@ -1,3 +1,5 @@
+#include "./detail/ebo.h"
+
 #include "folder.h"
 
 #include <memory>
@@ -5,8 +7,51 @@
 #include <iostream>
 #include <sstream>
 
-template <typename...>
-void foo();
+
+// TODO:
+// tr::tuple
+// tr::compressed_tuple
+// tr::span (with unpack capabilities)
+// try and add a tag type to ebo and see if compressing capabilities increase.
+
+namespace
+{
+	template <typename...>
+	void foo();
+
+    // Check that class tr::detail::ebo behaves like I expect. If this function
+    // compiles, the tests pass.
+	void test_ebo()
+	{
+		using tr::detail::ebo;
+		using tr::detail::ebo_traits;
+
+		struct S {};
+		ebo<S, true> ec{};
+		ebo<S, false> e{};
+
+		static_assert(
+			std::is_same_v<decltype(get_ebo_val(ec)), decltype(get_ebo_val(e))>);
+
+		static_assert(std::is_same_v<decltype(get_ebo_val(std::as_const(ec))),
+			decltype(get_ebo_val(std::as_const(e)))>);
+
+		static_assert(std::is_same_v<decltype(get_ebo_val(std::move(ec))),
+			decltype(get_ebo_val(std::move(e)))>);
+
+		static_assert(
+			std::is_same_v<decltype(get_ebo_val(std::move(std::as_const(ec)))),
+			decltype(get_ebo_val(std::move(std::as_const(e))))>);
+
+		struct S_final final {};
+		using func_ptr_t = void (*)();
+		static_assert(ebo_traits<ebo<S>>::is_compressed);
+		static_assert(!ebo_traits<ebo<S_final>>::is_compressed);
+		static_assert(!ebo_traits<ebo<S&>>::is_compressed);
+		static_assert(!ebo_traits<ebo<int>>::is_compressed);
+		static_assert(!ebo_traits<ebo<func_ptr_t>>::is_compressed);
+	}
+}
 
 int main() {
 
@@ -27,7 +72,7 @@ int main() {
 
     //auto c1 = std::move(c0) | 1;
 
-	//foo<decltype(c0)>();
+	//foo<decltype(toStr)>();
 	//foo<decltype(c1)>();
 
     //auto l = [](int, int) {};
