@@ -1,5 +1,6 @@
 #pragma once 
 
+#include "./detail/ebo.h"
 #include "./detail/type_traits.h"
 #include "./detail/utility.h"
 
@@ -52,7 +53,7 @@ namespace tr
 			static constexpr decltype(auto) get_operator_impl(CompOp&& compOp) noexcept
 			{
 				using ebo_t = ebo<BinaryOp, combinator_tag<0>>;
-				return get_ebo_val(forward_as<ebo_t>(std::forward<CompOp>(compOp)));
+				return get_ebo_val(forward_as<ebo_t, CompOp>(compOp));
 			}
 		};
 	}
@@ -82,7 +83,7 @@ namespace tr
 		{
 			using ebo_t = ebo<ValT, detail::combinator_tag<1>>;
 			using detail::forward_as;
-			return get_ebo_val(forward_as<ebo_t>(std::forward<Comb>(comb)));
+			return get_ebo_val(forward_as<ebo_t, Comb>(comb));
 		}
 
 	public:

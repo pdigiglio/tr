@@ -7,7 +7,7 @@ set(SOURCE_LIST
     detail/ebo.h
     detail/utility.h
     detail/type_traits.h
-    folder.h
+    combinator.h
     main.cpp)
 
 add_executable(${PROJ_NAME} ${SOURCE_LIST})

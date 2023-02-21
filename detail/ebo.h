@@ -51,7 +51,7 @@ namespace tr
 			if constexpr (ebo_traits_t::is_compressed)
 			{
 				using ebo_value_t = typename ebo_traits_t::type;
-				return forward_as<ebo_value_t>(std::forward<Ebo>(e));
+				return forward_as<ebo_value_t, Ebo>(e);
 			}
 			else
 			{

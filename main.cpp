@@ -1,6 +1,6 @@
-#include "./detail/ebo.h"
-
-#include "folder.h"
+#include "combinator.h"
+#include "detail/ebo.h"
+#include "detail/utility.h"
 
 #include <algorithm>
 #include <array>
@@ -19,6 +19,21 @@ namespace
 {
 	template <typename...>
 	void foo();
+
+	void test_fw()
+	{
+		using tr::detail::forward_as;
+
+		struct Base {};
+		struct Derived : Base {};
+
+		Derived d;
+		static_assert(std::is_same_v<decltype(forward_as<Base, Derived&>(d)), Base&>);
+		static_assert(std::is_same_v<decltype(forward_as<Base, Derived const&>(std::as_const(d))), Base const&>);
+
+		static_assert(std::is_same_v<decltype(forward_as<Base, Derived&&>(std::move(d))), Base&&>);
+		static_assert(std::is_same_v<decltype(forward_as<Base, Derived const&&>(std::move(std::as_const(d)))), Base const&&>);
+	}
 
 	struct TestEbo
 	{
