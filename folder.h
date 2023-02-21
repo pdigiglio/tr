@@ -9,200 +9,163 @@ namespace tr
 {
 	namespace detail
 	{
-		enum struct FoldSide
+		enum struct fold_side
 		{
-			Left,
-			Right
+			left,
+			right
 		};
 
-		template <FoldSide S>
-		struct ApplySideTag {};
-		static constexpr ApplySideTag<FoldSide::Left> apply_left{};
-		static constexpr ApplySideTag<FoldSide::Right> apply_right{};
+		template <fold_side S>
+		struct apply_side_tag {};
+		static constexpr apply_side_tag<fold_side::left> apply_left{};
+		static constexpr apply_side_tag<fold_side::right> apply_right{};
 
-		/// @brief A wrapper class to hold either a value type (e.g. T == int)
-		/// or a reference type (e.g. T == int&).
-		///
-		/// @tparam T The held type.
-		template <typename T>
-		struct Sink {
-			T val;
+		template <std::size_t>
+		struct combinator_tag;
 
-			//template <
-			//	typename Self,
-			//	typename = std::enable_if_t<std::is_same_v<remove_cvref_t<Self>, Sink<T>>>>
-			//static decltype(auto) fw_get(Self&& self) {
-			//	// If T is not a reference type, you can also do:
-			//	//return std::invoke(&Sink<T>::val, std::forward<Self>(self));
-			//	//
-			//	// If T is a reference type, the code above won't compile.
+		template <typename BinaryOp>
+		struct compressed_op : ebo<BinaryOp, combinator_tag<0>>
+		{
+			constexpr decltype(auto) get_operator() & noexcept
+			{
+				return compressed_op::get_operator_impl(*this);
+			}
 
-			//	return (std::forward<Self>(self).val);
-			//	//     ^ note the parenthesis
-			//	//
-			//	// When T is a value type, I need the parenthesis to return
-			//	// `val` with the same value category as `Self`. E.g., when T
-			//	// is int:
-			//	//  * decltype(std::forward<Self>(self).val) is always int
-			//	//  * decltype((std::forward<Self>(self).val)) is:
-			//	//    - int& if Self is lvalue to non-const;
-			//	//    - int const& if Self is lvalue to const;
-			//	//    - int&& if Self is rvalue to non-const;
-			//	//    - int const&& if Self is rvalue to const;
-			//	//
-			//	// When T is a reference type, the returned type will be T.
-			//	//
-			//}
+			constexpr decltype(auto) get_operator() const& noexcept
+			{
+				return compressed_op::get_operator_impl(*this);
+			}
+
+			constexpr decltype(auto) get_operator() && noexcept
+			{
+				return compressed_op::get_operator_impl(std::move(*this));
+			}
+
+			constexpr decltype(auto) get_operator() const&& noexcept
+			{
+				return compressed_op::get_operator_impl(std::move(*this));
+			}
+
+		private:
+
+			template <typename CompOp>
+			static constexpr decltype(auto) get_operator_impl(CompOp&& compOp) noexcept
+			{
+				using ebo_t = ebo<BinaryOp, combinator_tag<0>>;
+				return get_ebo_val(forward_as<ebo_t>(std::forward<CompOp>(compOp)));
+			}
 		};
-
-		template <
-			typename BinaryOp,
-			typename Value,
-			bool = !std::is_reference_v<BinaryOp> && !std::is_final_v<BinaryOp> && std::is_empty_v<BinaryOp>>
-		struct CombinatorStorage : BinaryOp
-		{
-			Value Value_;
-		};
-
-		template <typename BinaryOp, typename Value>
-		struct CombinatorStorage<BinaryOp, Value, false>
-		{
-			BinaryOp Operator_;
-			Value Value_;
-		};
-
-		template <typename BinaryOp, typename Value, bool IsCompressed>
-		constexpr decltype(auto) get_operator(CombinatorStorage<BinaryOp, Value, IsCompressed>& storage) noexcept
-		{
-			if constexpr (IsCompressed)
-			{
-				return static_cast<BinaryOp&>(storage);
-			}
-			else
-			{
-				return (storage.Operator_);
-			}
-		}
-
-		template <typename BinaryOp, typename Value, bool IsCompressed>
-		constexpr decltype(auto) get_operator(CombinatorStorage<BinaryOp, Value, IsCompressed> const& storage) noexcept
-		{
-			if constexpr (IsCompressed)
-			{
-				return static_cast<BinaryOp const&>(storage);
-			}
-			else
-			{
-				return (storage.Operator_);
-			}
-		}
 	}
 
 	template <typename BinaryOp, typename ValT>
-	struct Combinator : detail::CombinatorStorage<BinaryOp, ValT>
+	struct combinator
+		:
+		detail::compressed_op<BinaryOp>,
+		detail::ebo<ValT, detail::combinator_tag<1>>
 	{
 	private:
-		using base_t = detail::CombinatorStorage<BinaryOp, ValT>;
-
-		template <typename Comb, typename Arg, detail::FoldSide Side>
-		static decltype(auto) call_op(Comb&& comb, Arg&& arg, detail::ApplySideTag<Side>)
+		template <typename Comb, typename Arg, detail::fold_side Side>
+		constexpr static decltype(auto) call_op(Comb&& comb, Arg&& arg, detail::apply_side_tag<Side>)
 		{
-			if constexpr (Side == detail::FoldSide::Left)
+			if constexpr (Side == detail::fold_side::left)
 			{
-				return get_operator(comb)(std::forward<Comb>(comb)(), std::forward<Arg>(arg));
+				return comb.get_operator()(std::forward<Comb>(comb)(), std::forward<Arg>(arg));
 			}
 			else
 			{
-				return get_operator(comb)(std::forward<Arg>(arg), std::forward<Comb>(comb)());
+				return comb.get_operator()(std::forward<Arg>(arg), std::forward<Comb>(comb)());
 			}
 		}
 
 		template <typename Comb>
-		static decltype(auto) get_val(Comb&& comb)
+		constexpr static decltype(auto) get_val(Comb&& comb) noexcept
 		{
-			return std::forward<Comb>(comb).Value_;
+			using ebo_t = ebo<ValT, detail::combinator_tag<1>>;
+			using detail::forward_as;
+			return get_ebo_val(forward_as<ebo_t>(std::forward<Comb>(comb)));
 		}
 
 	public:
+		using detail::compressed_op<BinaryOp>::get_operator;
 
-		decltype(auto) operator()()&
+		constexpr decltype(auto) operator()()&
 		{
-			return Combinator::get_val(*this);
+			return combinator::get_val(*this);
 		}
 
-		decltype(auto) operator()() const&
+		constexpr decltype(auto) operator()() const&
 		{
-			return Combinator::get_val(*this);
+			return combinator::get_val(*this);
 		}
 
-		decltype(auto) operator()()&&
+		constexpr decltype(auto) operator()()&&
 		{
-			return Combinator::get_val(std::move(*this));
+			return combinator::get_val(std::move(*this));
 		}
 
-		decltype(auto) operator()() const&&
+		constexpr decltype(auto) operator()() const&&
 		{
-			return Combinator::get_val(std::move(*this));
+			return combinator::get_val(std::move(*this));
 		}
 
-		template <typename Arg, detail::FoldSide Side>
-		decltype(auto) operator()(Arg&& arg, detail::ApplySideTag<Side> side)
+		template <typename Arg, detail::fold_side Side>
+		constexpr decltype(auto) operator()(Arg&& arg, detail::apply_side_tag<Side> side)
 		{
-			return Combinator::call_op(*this, std::forward<Arg>(arg), side);
+			return combinator::call_op(*this, std::forward<Arg>(arg), side);
 		}
 
-		template <typename Arg, detail::FoldSide Side>
-		decltype(auto) operator()(Arg&& arg, detail::ApplySideTag<Side> side) const
+		template <typename Arg, detail::fold_side Side>
+		constexpr decltype(auto) operator()(Arg&& arg, detail::apply_side_tag<Side> side) const
 		{
-			return Combinator::call_op(*this, std::forward<Arg>(arg), side);
+			return combinator::call_op(*this, std::forward<Arg>(arg), side);
 		}
 	};
 
 	template <typename BinaryOp>
-	struct Combinator<BinaryOp, void> : detail::Sink<BinaryOp>
+	struct combinator<BinaryOp, void>
+		: detail::compressed_op<BinaryOp>
 	{
+		using detail::compressed_op<BinaryOp>::get_operator;
+
 		// No value to get
 		constexpr void operator()() const noexcept {}
 
-		template <typename T, detail::FoldSide S>
-		constexpr T&& operator()(T&& t, detail::ApplySideTag<S>) const noexcept
+		template <typename T, detail::fold_side S>
+		constexpr T&& operator()(T&& t, detail::apply_side_tag<S>) const noexcept
 		{
 			return std::forward<T>(t);
 		}
 	};
 
 	template <typename BinaryOp>
-	Combinator(BinaryOp&&) -> Combinator<BinaryOp, void>;
+	combinator(BinaryOp&&) -> combinator<BinaryOp, void>;
 
 	template <typename BinaryOp, typename Val>
-	Combinator(BinaryOp&&, Val&&) -> Combinator<BinaryOp, Val>;
+	combinator(BinaryOp&&, Val&&) -> combinator<BinaryOp, Val>;
 
 	namespace detail
 	{
-		template <typename Comb, typename Arg, FoldSide Side>
-		constexpr decltype(auto) pipe_impl(Comb&& comb, Arg&& arg, ApplySideTag<Side> side)
+		template <typename Comb, typename Arg, fold_side Side>
+		constexpr decltype(auto) pipe_impl(Comb&& comb, Arg&& arg, apply_side_tag<Side> side)
 		{
-			return Combinator
+			return combinator
 			{
-				forward_like<Comb>(get_operator(comb)),
+				std::forward<Comb>(comb).get_operator(),
 				std::forward<Comb>(comb)(std::forward<Arg>(arg), side)
 			};
 		}
 	}
 
-	template <typename BinaryOp, typename ValT>
-	struct Combinator;
-
 	template <typename>
-	struct IsCombinator : std::false_type {};
+	struct is_combinator : std::false_type {};
 
 	template <typename BinaryOp, typename ValT>
-	struct IsCombinator<Combinator<BinaryOp, ValT>> : std::true_type {};
+	struct is_combinator<combinator<BinaryOp, ValT>> : std::true_type {};
 
 	template <
 		typename Comb,
 		typename Arg,
-		typename = std::enable_if_t<IsCombinator<detail::remove_cvref_t<Comb>>::value>>
+		typename = std::enable_if_t<is_combinator<detail::remove_cvref_t<Comb>>::value>>
 	constexpr decltype(auto) operator|(Comb&& comb, Arg&& arg)
 	{
 		return detail::pipe_impl(std::forward<Comb>(comb), std::forward<Arg>(arg), detail::apply_left);
@@ -211,7 +174,7 @@ namespace tr
 	template <
 		typename Comb,
 		typename Arg,
-		typename = std::enable_if_t<IsCombinator<detail::remove_cvref_t<Comb>>::value>>
+		typename = std::enable_if_t<is_combinator<detail::remove_cvref_t<Comb>>::value>>
 	constexpr decltype(auto) operator|(Arg&& arg, Comb&& comb)
 	{
 		return detail::pipe_impl(std::forward<Comb>(comb), std::forward<Arg>(arg), detail::apply_right);

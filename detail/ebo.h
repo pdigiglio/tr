@@ -11,11 +11,12 @@ namespace tr
 	{
 		template <
 			typename T,
+			typename Tag,
 			bool IsCompressed = !std::is_reference_v<T> && !std::is_final_v<T>&& std::is_empty_v<T>>
 		struct ebo : T {};
 
-		template <typename T>
-		struct ebo<T, false>
+		template <typename T, typename Tag>
+		struct ebo<T, Tag, false>
 		{
 			T Val_;
 		};
@@ -23,8 +24,8 @@ namespace tr
 		template <typename>
 		struct is_ebo : std::false_type {};
 
-		template <typename T, bool IsCompressed>
-		struct is_ebo<ebo<T, IsCompressed>> : std::true_type {};
+		template <typename T, typename Tag, bool IsCompressed>
+		struct is_ebo<ebo<T, Tag, IsCompressed>> : std::true_type {};
 
 		template <typename T>
 		static constexpr bool is_ebo_v{ is_ebo<T>::value };
@@ -32,10 +33,11 @@ namespace tr
 		template <typename>
 		struct ebo_traits;
 
-		template <typename T, bool IsCompressed>
-		struct ebo_traits<ebo<T, IsCompressed>>
+		template <typename T, typename Tag, bool IsCompressed>
+		struct ebo_traits<ebo<T, Tag, IsCompressed>>
 		{
 			using type = T;
+			using tag = Tag;
 			static constexpr bool is_compressed{ IsCompressed };
 		};
 
