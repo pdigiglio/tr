@@ -1,6 +1,7 @@
 #include "combinator.h"
 #include "detail/ebo.h"
 #include "detail/utility.h"
+#include "tuple.h"
 
 #include <algorithm>
 #include <array>
@@ -175,5 +176,14 @@ namespace
 
 int main()
 {
+	tr::tuple t{ 1,"hello",3,4};
+	auto const [a, hello, c, d] = t;
+
+	std::puts(hello);
+
+
+
+	//foo<decltype(t)>();
+	//foo<decltype(b)>();
 }
 
