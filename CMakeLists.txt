@@ -10,6 +10,7 @@ set(SOURCE_LIST
     detail/type_traits.h
     detail/utility.h
     tuple.h
+    tuple_protocol.h
     main.cpp)
 
 add_executable(${PROJ_NAME} ${SOURCE_LIST})

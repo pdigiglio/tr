@@ -81,7 +81,7 @@ namespace tr
 		template <typename Comb>
 		constexpr static decltype(auto) get_val(Comb&& comb) noexcept
 		{
-			using ebo_t = ebo<ValT, detail::combinator_tag<1>>;
+			using ebo_t = detail::ebo<ValT, detail::combinator_tag<1>>;
 			using detail::forward_as;
 			return get_ebo_val(forward_as<ebo_t, Comb>(comb));
 		}
