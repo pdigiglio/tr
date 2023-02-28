@@ -12,6 +12,7 @@ set(SOURCE_LIST
     tr/detail/utility.h
     tr/tuple.h
     tr/tuple_protocol.h
+    tr/tuple_view.h
     main.cpp)
 
 add_executable(${PROJ_NAME} ${SOURCE_LIST})

@@ -18,7 +18,7 @@ namespace tr
 	struct tup_size;
 
 	template <typename T>
-	static constexpr auto tup_size_v{ tup_size<T>::value };
+	static constexpr std::size_t tup_size_v{ tup_size<T>::value };
 
 	template <typename T>
 	struct tup_size<T const>

@@ -1,8 +1,9 @@
+#include "tr/algorithm.h"
 #include "tr/combinator.h"
 #include "tr/detail/ebo.h"
 #include "tr/detail/utility.h"
 #include "tr/tuple.h"
-#include "tr/algorithm.h"
+#include "tr/tuple_view.h"
 
 #include <algorithm>
 #include <array>
@@ -18,6 +19,10 @@
 // tr::compressed_tuple
 // tr::span (with unpack capabilities)
 // try and add a tag type to ebo and see if compressing capabilities increase.
+
+// TODO:
+//  1. Do I need tup_elem ? Probably not
+//  2. Change tr::get to another name to avoid ADL issues with std::get.
 
 namespace
 {
@@ -211,6 +216,18 @@ int main()
 		//std::printf("idx %td\n", idx);
 		static_assert(idx == 5);
 	}
+
+	{
+
+		tr::tuple t{ 0,0,0,0,0 };
+		auto view0 = tr::drop_first<1>(t);
+		auto view1 = tr::drop_first<1>(view0);
+		tr::for_each(view1, [](auto& elem) { ++elem; });
+		tr::for_each(std::as_const(t), [](auto const& elem) { std::printf("%d ", elem); });
+
+		//foo<decltype(view)>();
+	}
+
 
 
 
