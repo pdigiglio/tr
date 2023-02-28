@@ -4,13 +4,13 @@ set(PROJ_NAME "tr")
 project(${PROJ_NAME} VERSION 0.0.0 LANGUAGES CXX)
 
 set(SOURCE_LIST
-    combinator.h
-    detail/ebo.h
-    detail/type_pack.h
-    detail/type_traits.h
-    detail/utility.h
-    tuple.h
-    tuple_protocol.h
+    tr/combinator.h
+    tr/detail/ebo.h
+    tr/detail/type_pack.h
+    tr/detail/type_traits.h
+    tr/detail/utility.h
+    tr/tuple.h
+    tr/tuple_protocol.h
     main.cpp)
 
 add_executable(${PROJ_NAME} ${SOURCE_LIST})

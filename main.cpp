@@ -1,7 +1,7 @@
-#include "combinator.h"
-#include "detail/ebo.h"
-#include "detail/utility.h"
-#include "tuple.h"
+#include "tr/combinator.h"
+#include "tr/detail/ebo.h"
+#include "tr/detail/utility.h"
+#include "tr/tuple.h"
 
 #include <algorithm>
 #include <array>
