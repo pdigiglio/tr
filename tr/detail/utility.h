@@ -50,4 +50,10 @@ namespace tr
 			return static_cast<cv_ref_base_t>(x);
 		}
 	}
+
+	template <int I>
+	constexpr std::integral_constant<int, I> ic{};
+
+	template <std::size_t I>
+	constexpr std::integral_constant<std::size_t, I> zuic{};
 }

@@ -4,6 +4,7 @@ set(PROJ_NAME "tr")
 project(${PROJ_NAME} VERSION 0.0.0 LANGUAGES CXX)
 
 set(SOURCE_LIST
+    tr/algorithm.h
     tr/combinator.h
     tr/detail/ebo.h
     tr/detail/type_pack.h

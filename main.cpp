@@ -2,6 +2,7 @@
 #include "tr/detail/ebo.h"
 #include "tr/detail/utility.h"
 #include "tr/tuple.h"
+#include "tr/algorithm.h"
 
 #include <algorithm>
 #include <array>
