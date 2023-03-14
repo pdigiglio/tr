@@ -1,5 +1,8 @@
 #pragma once
 
+#include "./detail/type_traits.h"
+#include "./tuple_protocol.h"
+
 #include <cstddef>
 #include <utility>
 
@@ -44,7 +47,7 @@ namespace tr
 
 			bool stop{};
 			std::ptrdiff_t idx{};
-			((stop = pred(get<Is>(std::forward<Tuple>(tuple))), idx = Is, stop) || ...);
+			(void)((stop = pred(get<Is>(std::forward<Tuple>(tuple))), idx = Is, stop) || ...);
 			return stop ? idx : -1;
 			//                  ^ -1 if predicate not satisfied as it's not
 			//                  easy to get the size of a tuple.
@@ -59,8 +62,15 @@ namespace tr
 		{
 			bool stop{};
 			std::ptrdiff_t idx{};
-			((stop = pred(get<Is>(std::forward<Tuple>(tuple)), get<Is + 1>(std::forward<Tuple>(tuple))), idx = Is, stop) || ...);
+			(void)((stop = pred(get<Is>(std::forward<Tuple>(tuple)), get<Is + 1>(std::forward<Tuple>(tuple))), idx = Is, stop) || ...);
 			return stop ? idx : notFound;
+		}
+
+		template <typename Tuple0, typename Tuple1, typename Cmp, std::size_t ... Is>
+		constexpr bool equal_unchecked(Tuple0&& lhs, Tuple1&& rhs, Cmp cmp, std::index_sequence<Is...>)
+		{
+			using tr::get;
+			return (cmp(get<Is>(std::forward<Is>(lhs)), get<Is>(std::forward<Is>(rhs))) && ...);
 		}
 
 		template <typename T = void>
@@ -228,5 +238,35 @@ namespace tr
 	constexpr std::ptrdiff_t adjacent_find(Tuple&& tuple)
 	{
 		return adjacent_find(std::forward<Tuple>(tuple), detail::equal_pred<>{});
+	}
+
+
+	template <typename Tuple0, typename Tuple1, typename Cmp>
+	constexpr bool equal(Tuple0&& lhs, Tuple1&& rhs, Cmp cmp)
+	{
+		using tuple0_t = std::remove_reference_t<Tuple0>;
+		auto const tuple0Size = tr::tup_size_v<tuple0_t>;
+
+		using tuple1_t = std::remove_reference_t<Tuple1>;
+		auto const tuple1Size = tr::tup_size_v<tuple1_t>;
+
+		if constexpr (tuple0Size != tuple1Size)
+		{
+			return false;
+		}
+		else
+		{
+			return detail::equal_unchecked(
+				std::forward<Tuple0>(lhs),
+				std::forward<Tuple1>(rhs),
+				cmp,
+				std::make_index_sequence<tuple0Size>{});
+		}
+	}
+
+	template <typename Tuple0, typename Tuple1>
+	constexpr bool equal(Tuple0&& lhs, Tuple1&& rhs)
+	{
+		return equal(std::forward<Tuple0>(lhs), std::forward<Tuple1>(rhs), detail::equal_pred<>{});
 	}
 }

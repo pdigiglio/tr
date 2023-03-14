@@ -10,9 +10,17 @@ set(SOURCE_LIST
     tr/detail/type_pack.h
     tr/detail/type_traits.h
     tr/detail/utility.h
+    tr/overload.h
     tr/tuple.h
     tr/tuple_protocol.h
+    tr/tuple_protocol/built_in_array.h
+    tr/tuple_protocol/std_index_sequence.h
+    tr/tuple_protocol/std_pair.h
+    tr/tuple_protocol/std_tuple.h
     tr/tuple_view.h
+    tr/type_constant.h
+    tr/value_constant.h
+    tr/value_sequence.h
     main.cpp)
 
 add_executable(${PROJ_NAME} ${SOURCE_LIST})
@@ -23,4 +31,7 @@ if (MSVC)
     target_compile_options(${PROJ_NAME} PRIVATE /W4)
 else()
     target_compile_options(${PROJ_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${PROJ_NAME} PRIVATE -Wno-missing-braces)
+    endif()
 endif()

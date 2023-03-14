@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../type_constant.h"
+
 #include <type_traits>
 
 namespace tr
@@ -16,7 +18,7 @@ namespace tr
 		using type_identity_t = typename type_identity<T>::type;
 
 		template <typename T>
-		struct remove_cvref 
+		struct remove_cvref
 		{
 			using type = std::remove_cv_t<std::remove_reference_t<T>>;
 		};
@@ -40,7 +42,7 @@ namespace tr
 		struct is_complete : std::false_type {};
 
 		template <typename T>
-		struct is_complete<T, std::enable_if_t<sizeof(T)>> : std::true_type {};
+		struct is_complete<T, void_t<decltype(sizeof(T))>> : std::true_type {};
 
 		template <typename T>
 		constexpr static bool is_complete_v{ is_complete<T>::value };
@@ -62,6 +64,30 @@ namespace tr
 			return {};
 		}
 	}
+
+	//// If all of `type_c<Ts>...` can be assigned to each other, `Ts...` are the
+	//// same type.
+	//// Compiles on clang: doesn't compile on MSVC
+	//template <typename... Ts>
+	//struct are_same : detail::is_valid<decltype((type_c<Ts> = ...))> {};
+
+	template <typename... >
+	struct are_same : std::false_type {};
+
+	template <>
+	struct are_same<> : std::true_type {};
+
+	template <typename T, typename ... Ts>
+	struct are_same<T, Ts...> : std::integral_constant<bool, (std::is_same_v<T, Ts> && ...)> {};
+
+	template <typename... Ts>
+	constexpr static bool are_same_v{ are_same<Ts...>::value };
+
+	template <bool Condition, typename IfTrue, typename IfFalse>
+	using if_ = std::conditional_t<Condition, IfTrue, IfFalse>;
+
+	template <bool Condition, typename T = void>
+	using require_ = std::enable_if_t<Condition, T>;
 }
 
 //#include <cstdio>

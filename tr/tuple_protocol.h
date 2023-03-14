@@ -8,9 +8,11 @@
 #pragma once
 
 #include "./detail/type_traits.h"
+#include "./value_constant.h"
 
 #include <cstddef>
 #include <type_traits>
+#include <utility>
 
 namespace tr
 {
@@ -33,4 +35,10 @@ namespace tr
 	template <std::size_t I, typename T>
 	struct tup_elem<I, T const>
 		: detail::type_identity<std::add_const<tup_elem_t<I, T>>> {};
+
+	template <auto I, typename T, typename = std::enable_if_t<std::is_integral_v<decltype(I)>>>
+	[[nodiscard]] constexpr decltype(auto) get(T&& tup, value_constant<I>) noexcept {
+		using tr::get, std::get;
+		return get<I>(std::forward<T>(tup));
+	}
 }
