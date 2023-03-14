@@ -14,13 +14,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
-#include <cassert>
-#include <cstring>
 
 // TODO:
 // tr::tuple
@@ -33,267 +33,263 @@
 //  2. Change tr::get to another name to avoid ADL issues with std::get.
 //  3. Some kind of cx iota to generate compile time indices.
 
-namespace
-{
-	template <typename...>
-	void foo();
+namespace {
+template <typename...> void foo();
 
-	struct TestFw
-	{
-		void test_fw()
-		{
-			using tr::detail::forward_as;
+struct TestFw {
+    void test_fw() {
+        using tr::detail::forward_as;
 
-			struct Base {};
-			struct Derived : Base {};
+        struct Base {};
+        struct Derived : Base {};
 
-			Derived d;
-			static_assert(std::is_same_v<decltype(forward_as<Base, Derived&>(d)), Base&>);
-			static_assert(std::is_same_v<decltype(forward_as<Base, Derived const&>(std::as_const(d))), Base const&>);
+        Derived d;
+        static_assert(
+            std::is_same_v<decltype(forward_as<Base, Derived &>(d)), Base &>);
+        static_assert(std::is_same_v<decltype(forward_as<Base, Derived const &>(
+                                         std::as_const(d))),
+                                     Base const &>);
 
-			static_assert(std::is_same_v<decltype(forward_as<Base, Derived&&>(std::move(d))), Base&&>);
-			static_assert(std::is_same_v<decltype(forward_as<Base, Derived const&&>(std::move(std::as_const(d)))), Base const&&>);
-		}
-	};
+        static_assert(
+            std::is_same_v<decltype(forward_as<Base, Derived &&>(std::move(d))),
+                           Base &&>);
+        static_assert(
+            std::is_same_v<decltype(forward_as<Base, Derived const &&>(
+                               std::move(std::as_const(d)))),
+                           Base const &&>);
+    }
+};
 
-	struct TestEbo
-	{
-		void value_categories()
-		{
-			using tr::detail::ebo;
+struct TestEbo {
+    void value_categories() {
+        using tr::detail::ebo;
 
-			struct tag_t {};
-			struct S {};
-			ebo<S, tag_t, true> ec{};
-			ebo<S, tag_t, false> e{};
+        struct tag_t {};
+        struct S {};
+        ebo<S, tag_t, true> ec{};
+        ebo<S, tag_t, false> e{};
 
-			static_assert(
-				std::is_same_v<decltype(get_ebo_val(ec)), decltype(get_ebo_val(e))>);
+        static_assert(std::is_same_v<decltype(get_ebo_val(ec)),
+                                     decltype(get_ebo_val(e))>);
 
-			static_assert(std::is_same_v<decltype(get_ebo_val(std::as_const(ec))),
-				decltype(get_ebo_val(std::as_const(e)))>);
+        static_assert(std::is_same_v<decltype(get_ebo_val(std::as_const(ec))),
+                                     decltype(get_ebo_val(std::as_const(e)))>);
 
-			static_assert(std::is_same_v<decltype(get_ebo_val(std::move(ec))),
-				decltype(get_ebo_val(std::move(e)))>);
+        static_assert(std::is_same_v<decltype(get_ebo_val(std::move(ec))),
+                                     decltype(get_ebo_val(std::move(e)))>);
 
-			static_assert(
-				std::is_same_v<decltype(get_ebo_val(std::move(std::as_const(ec)))),
-				decltype(get_ebo_val(std::move(std::as_const(e))))>);
-		}
+        static_assert(
+            std::is_same_v<decltype(get_ebo_val(std::move(std::as_const(ec)))),
+                           decltype(get_ebo_val(std::move(std::as_const(e))))>);
+    }
 
-		void traits()
-		{
-			using tr::detail::ebo;
-			using tr::detail::ebo_traits;
+    void traits() {
+        using tr::detail::ebo;
+        using tr::detail::ebo_traits;
 
-			struct tag_t {};
-			struct S {};
+        struct tag_t {};
+        struct S {};
 
-			struct S_final final {};
-			using func_ptr_t = void (*)();
-			static_assert(ebo_traits<ebo<S, tag_t>>::is_compressed);
-			static_assert(!ebo_traits<ebo<S_final, tag_t>>::is_compressed);
-			static_assert(!ebo_traits<ebo<S&, tag_t>>::is_compressed);
-			static_assert(!ebo_traits<ebo<int, tag_t>>::is_compressed);
-			static_assert(!ebo_traits<ebo<func_ptr_t, tag_t>>::is_compressed);
-		}
-	};
+        struct S_final final {};
+        using func_ptr_t = void (*)();
+        static_assert(ebo_traits<ebo<S, tag_t>>::is_compressed);
+        static_assert(!ebo_traits<ebo<S_final, tag_t>>::is_compressed);
+        static_assert(!ebo_traits<ebo<S &, tag_t>>::is_compressed);
+        static_assert(!ebo_traits<ebo<int, tag_t>>::is_compressed);
+        static_assert(!ebo_traits<ebo<func_ptr_t, tag_t>>::is_compressed);
+    }
+};
 
-    // Check that class tr::combinator behaves like I expect.
-	struct TestCombinator
-	{
-		void apply()
-		{
-			using tr::combinator;
-			constexpr std::tuple vals{ 0.1, 1, 2, 3, 4 };
+// Check that class tr::combinator behaves like I expect.
+struct TestCombinator {
+    void apply() {
+        using tr::combinator;
+        constexpr std::tuple vals{0.1, 1, 2, 3, 4};
 
-			{
-				constexpr combinator minComb{ [](auto i, auto j) { return i < j ? i : j; } };
-				static_assert(sizeof(minComb) == 1);
-				static_assert(std::is_aggregate_v<decltype(minComb)>);
+        {
+            constexpr combinator minComb{
+                [](auto i, auto j) { return i < j ? i : j; }};
+            static_assert(sizeof(minComb) == 1);
+            static_assert(std::is_aggregate_v<decltype(minComb)>);
 
-				constexpr auto minVal = std::apply(
-					[=](auto ... args) { return (minComb | ... | args)(); },
-					vals);
+            constexpr auto minVal = std::apply(
+                [=](auto... args) { return (minComb | ... | args)(); }, vals);
 
-				static_assert(minVal == std::get<0>(vals));
-			}
+            static_assert(minVal == std::get<0>(vals));
+        }
 
-			{
-				constexpr combinator maxComb{ [](auto i, auto j) { return i > j ? i : j; }, 5 };
-				static_assert(sizeof(maxComb) == sizeof(int));
-				static_assert(std::is_aggregate_v<decltype(maxComb)>);
+        {
+            constexpr combinator maxComb{
+                [](auto i, auto j) { return i > j ? i : j; }, 5};
+            static_assert(sizeof(maxComb) == sizeof(int));
+            static_assert(std::is_aggregate_v<decltype(maxComb)>);
 
-				constexpr auto max = std::apply(
-					[=](auto ... args) { return (maxComb | ... | args)(); },
-					vals);
+            constexpr auto max = std::apply(
+                [=](auto... args) { return (maxComb | ... | args)(); }, vals);
 
-				constexpr auto init = maxComb();
-				static_assert(max == init);
-			}
-		}
+            constexpr auto init = maxComb();
+            static_assert(max == init);
+        }
+    }
 
-		void value_categories()
-		{
-			using tr::combinator;
+    void value_categories() {
+        using tr::combinator;
 
-			{
-				combinator comb{ [](int, int) {} };
-				static_assert(
-					std::is_rvalue_reference_v<decltype(std::move(comb).get_operator())> &&
-					!std::is_const_v<std::remove_reference_t<decltype(std::move(comb).get_operator())>>);
+        {
+            combinator comb{[](int, int) {}};
+            static_assert(std::is_rvalue_reference_v<
+                              decltype(std::move(comb).get_operator())> &&
+                          !std::is_const_v<std::remove_reference_t<
+                              decltype(std::move(comb).get_operator())>>);
 
-				static_assert(
-					std::is_rvalue_reference_v<decltype(std::move(std::as_const(comb)).get_operator())> &&
-					std::is_const_v<std::remove_reference_t<decltype(std::move(std::as_const(comb)).get_operator())>>);
+            static_assert(
+                std::is_rvalue_reference_v<
+                    decltype(std::move(std::as_const(comb)).get_operator())> &&
+                std::is_const_v<std::remove_reference_t<
+                    decltype(std::move(std::as_const(comb)).get_operator())>>);
 
-				static_assert(
-					std::is_lvalue_reference_v<decltype(comb.get_operator())> &&
-					!std::is_const_v<std::remove_reference_t<decltype(comb.get_operator())>>);
+            static_assert(
+                std::is_lvalue_reference_v<decltype(comb.get_operator())> &&
+                !std::is_const_v<
+                    std::remove_reference_t<decltype(comb.get_operator())>>);
 
-				static_assert(
-					std::is_lvalue_reference_v<decltype(std::as_const(comb).get_operator())> &&
-					std::is_const_v<std::remove_reference_t<decltype(std::as_const(comb).get_operator())>>);
-			}
-		}
-	};
+            static_assert(std::is_lvalue_reference_v<
+                              decltype(std::as_const(comb).get_operator())> &&
+                          std::is_const_v<std::remove_reference_t<
+                              decltype(std::as_const(comb).get_operator())>>);
+        }
+    }
+};
 
-	//struct TestValueSequence
-	//{
-	//private:
-	//	template <typename T, auto...Vals, std::size_t ... Is>
-	//	void test_vals_impl(tr::value_sequence<T, Vals...> vs, std::index_sequence<Is...>)
-	//	{
-	//		([](tr::value_sequence<T, Vals...> vs_) constexpr {
-	//				using tr::at_;
-	//				static_assert(at_<Is>(vs_) == Vals + 1);
+// struct TestValueSequence
+//{
+// private:
+//	template <typename T, auto...Vals, std::size_t ... Is>
+//	void test_vals_impl(tr::value_sequence<T, Vals...> vs,
+// std::index_sequence<Is...>)
+//	{
+//		([](tr::value_sequence<T, Vals...> vs_) constexpr {
+//				using tr::at_;
+//				static_assert(at_<Is>(vs_) == Vals + 1);
 
-	//				using tr::ic;
-	//				static_assert(vs_[ic<Is>] == Vals);
-	//			}(vs), ...);
-	//	}
+//				using tr::ic;
+//				static_assert(vs_[ic<Is>] == Vals);
+//			}(vs), ...);
+//	}
 
-	//	template <typename T, auto...Vals>
-	//	void test_vals(tr::value_sequence<T, Vals...> vs)
-	//	{
-	//		test_vals_impl(vs, std::make_index_sequence<sizeof...(Vals)>{});
-	//	}
+//	template <typename T, auto...Vals>
+//	void test_vals(tr::value_sequence<T, Vals...> vs)
+//	{
+//		test_vals_impl(vs, std::make_index_sequence<sizeof...(Vals)>{});
+//	}
 
-	//public:
-	//	void test()
-	//	{
-	//		auto arr = tr::array_c<int, 0, 1, 2>;
-	//		test_vals(arr);
+// public:
+//	void test()
+//	{
+//		auto arr = tr::array_c<int, 0, 1, 2>;
+//		test_vals(arr);
 
-	//		auto tup = tr::tuple_c<0, 1, 2>;
-	//		test_vals(tup);
+//		auto tup = tr::tuple_c<0, 1, 2>;
+//		test_vals(tup);
 
-	//		static_assert(std::is_aggregate_v<tr::value_array_constant<int, 0, 1, 2>>);
-	//		static_assert(std::is_aggregate_v<tr::value_tuple_constant<0, 'c', 2>>);
-	//	}
+//		static_assert(std::is_aggregate_v<tr::value_array_constant<int,
+//0, 1, 2>>);
+// static_assert(std::is_aggregate_v<tr::value_tuple_constant<0, 'c', 2>>);
+//	}
 
-	//};
+//};
+} // namespace
+
+int main() {
+    using tr::tuple;
+
+    constexpr std::pair p{"hello", 1};
+    tr::for_each(p, [](auto i) { std::cout << '\'' << i << "'\n"; });
+
+    {
+        constexpr auto ok = tr::any_of(
+            p, [](auto i) { return std::is_same_v<decltype(i), int>; });
+        static_assert(ok);
+    }
+
+    {
+        // constexpr auto ok = tr::all_of(p, [](auto i) { return
+        // tr::detail::is_complete_v<decltype(i)>; });
+        auto isComplete = [](auto *i) constexpr {
+            using tr::detail::is_complete_v;
+            return is_complete_v<decltype(*i)>;
+        };
+
+        struct incomplete;
+        constexpr incomplete *vals[10]{};
+        constexpr auto ok = tr::all_of(vals, isComplete);
+        static_assert(!ok);
+    }
+
+    {
+        constexpr auto ok = tr::none_of(
+            p, [](auto i) { return !tr::detail::is_complete_v<decltype(i)>; });
+        static_assert(ok);
+    }
+
+    {
+        static_assert(tr::count(p, 2) == 0);
+        static_assert(tr::count(p, 1) == 1);
+
+        char const str[] = "hello";
+        auto const c =
+            tr::count_if(p, tr::overload{[](auto) { return false; },
+                                         [&str](char const *elem) {
+                                             return std::strcmp(elem, str) == 0;
+                                         }});
+
+        std::printf("occurrences of '%s': %td\n", str, c);
+    }
+
+    {
+        constexpr tr::tuple t{0, 1, 2, 3, 4, 4, 5};
+        constexpr auto idx = find_if_not(t, [](auto i) { return i < 5; });
+        (void)t[std::integral_constant<int, idx>{}];
+
+        // std::printf("idx %td\n", idx);
+        // static_assert(idx == -1);
+    }
+
+    {
+        constexpr tr::tuple t{0, 1, 2, 3, 4, 5, 5};
+        constexpr auto idx = adjacent_find(t);
+        //(void)t[std::integral_constant<int, idx>{}];
+
+        // std::printf("idx %td\n", idx);
+        static_assert(idx == 5);
+    }
+
+    {
+
+        // tr::tuple t{ 0,0,0,0,0 };
+        std::uint8_t t[32]{};
+        // tr::for_each(tr::iota_for(t), [&t](auto i) { tr::get(t, i) = i; });
+        tr::for_each(tr::iota_for(t), [&t](auto i) { tr::get<i>(t) = i; });
+
+        // auto view0 = tr::drop_first<1>(t);
+        // auto view1 = tr::drop_first<1>(view0);
+        tr::for_each(tr::drop_first<10>(t), [](auto &elem) { elem = 0; });
+        tr::for_each(std::as_const(t),
+                     [](auto elem) { std::printf("%d ", elem); });
+        std::puts("");
+
+        // foo<decltype(view)>();
+    }
+
+    // char const str[] = "hello";
+    // tr::tuple<int, int[2], int, int> t0{ 1,{1,2},3,4 };
+    // tr::tuple t1{ 2,"hallo",3,4 };
+
+    ////foo<decltype(t)>();
+    ////foo<decltype(b)>();
 }
 
-int main()
-{
-	using tr::tuple;
-
-
-	constexpr std::pair p{ "hello", 1 };
-	tr::for_each(p, [](auto i) { std::cout << '\'' << i << "'\n"; });
-
-	{
-		constexpr auto ok = tr::any_of(p, [](auto i) { return std::is_same_v<decltype(i), int>; });
-		static_assert(ok);
-	}
-
-	{
-		//constexpr auto ok = tr::all_of(p, [](auto i) { return tr::detail::is_complete_v<decltype(i)>; });
-		auto isComplete = [](auto* i) constexpr
-		{
-			using tr::detail::is_complete_v;
-			return is_complete_v<decltype(*i)>;
-		};
-
-		struct incomplete;
-		constexpr incomplete* vals[10]{};
-		constexpr auto ok = tr::all_of(vals, isComplete);
-		static_assert(!ok);
-	}
-
-	{
-		constexpr auto ok = tr::none_of(p, [](auto i) { return !tr::detail::is_complete_v<decltype(i)>; });
-		static_assert(ok);
-	}
-
-	{
-		static_assert(tr::count(p, 2) == 0);
-		static_assert(tr::count(p, 1) == 1);
-
-		char const  str[] = "hello";
-		auto const c = tr::count_if(p,
-			tr::overload{
-				[](auto) { return false; },
-				[&str](char const* elem) { return std::strcmp(elem, str) == 0; }
-			});
-
-		std::printf("occurrences of '%s': %td\n", str, c);
-	}
-
-	{
-		constexpr tr::tuple t{ 0,1,2,3,4,4,5 };
-		constexpr auto idx = find_if_not(t, [](auto i) { return i < 5; });
-		(void)t[std::integral_constant<int, idx>{}];
-
-
-
-
-		//std::printf("idx %td\n", idx);
-		//static_assert(idx == -1);
-	}
-
-	{
-		constexpr tr::tuple t{ 0,1,2,3,4,5,5};
-		constexpr auto idx = adjacent_find(t);
-		//(void)t[std::integral_constant<int, idx>{}];
-
-		//std::printf("idx %td\n", idx);
-		static_assert(idx == 5);
-	}
-
-	{
-
-		//tr::tuple t{ 0,0,0,0,0 };
-		std::uint8_t t[32]{};
-		//tr::for_each(tr::iota_for(t), [&t](auto i) { tr::get(t, i) = i; });
-		tr::for_each(tr::iota_for(t), [&t](auto i) { tr::get<i>(t) = i; });
-
-		//auto view0 = tr::drop_first<1>(t);
-		//auto view1 = tr::drop_first<1>(view0);
-		tr::for_each(tr::drop_first<10>(t), [](auto& elem) { elem = 0; /* ++elem; */ });
-		tr::for_each(std::as_const(t), [](auto elem) { std::printf("%d ", elem); });
-		std::puts("");
-
-		//foo<decltype(view)>();
-	}
-
-
-
-
-	//char const str[] = "hello";
-	//tr::tuple<int, int[2], int, int> t0{ 1,{1,2},3,4 };
-	//tr::tuple t1{ 2,"hallo",3,4 };
-
-
-
-
-
-	////foo<decltype(t)>();
-	////foo<decltype(b)>();
-}
-
-//namespace detail {
+// namespace detail {
 //	template <auto Val>
 //	struct value_constant_base {
 //		using type = decltype(Val);
@@ -316,12 +312,16 @@ int main()
 //
 //	template <auto... Vals>
 //	struct value_tuple_base<value_tuple_tag<>, value_pack<Vals...>> {
-//		///// @brief Implicit cast to homogeneous tuple (if `T` is the common type
+//		///// @brief Implicit cast to homogeneous tuple (if `T` is the
+// common type
 //		/// of
 //		///// all my values).
-//		// template <typename T, typename = std::enable_if_t<std::is_same_v<
-//		//                           T, std::common_type_t<T, decltype(Vals)...>>>>
-//		// constexpr operator value_tuple_base<value_tuple_tag<T>, Vals...>()
+//		// template <typename T, typename =
+// std::enable_if_t<std::is_same_v<
+//		//                           T, std::common_type_t<T,
+// decltype(Vals)...>>>>
+//		// constexpr operator value_tuple_base<value_tuple_tag<T>,
+// Vals...>()
 //		//     const noexcept {
 //		//     return {};
 //		// }
@@ -329,17 +329,21 @@ int main()
 //
 //	template <typename T, T... Vals>
 //	struct value_tuple_base<value_tuple_tag<T>, value_pack<Vals...>> {
-//		///// @brief Implicit cast to another tuple. This will cast both to:
-//		/////  - an homogeneous tuple whose type `U` is such that casting from `T`
+//		///// @brief Implicit cast to another tuple. This will cast both
+// to:
+//		/////  - an homogeneous tuple whose type `U` is such that
+//casting from `T`
 //		/// to
 //		/////  `U` doesn't narrow;
 //		/////  - an heterogeneous tuple;
 //		/////
 //		// template <typename U, U... Vs,
 //		//           typename =
-//		//               std::enable_if_t<std::is_same_v<U, std::common_type_t<U,
+//		//               std::enable_if_t<std::is_same_v<U,
+// std::common_type_t<U,
 //		//               T>>>>
-//		// constexpr operator value_tuple_base<value_tuple_tag<U>, Vs...>()
+//		// constexpr operator value_tuple_base<value_tuple_tag<U>,
+// Vs...>()
 //		//     const noexcept {
 //		//     return value_tuple_base<value_tuple_tag<U>,
 //		//     static_cast<U>(Vals)...>{};
@@ -348,13 +352,13 @@ int main()
 //
 //	template <std::size_t I, typename T, auto Val, auto... Vals>
 //	constexpr auto at(
-//		value_tuple_base<value_tuple_tag<T>, value_pack<Val, Vals...>>) noexcept {
-//		static_assert(I < 1 + sizeof...(Vals));
-//		if constexpr (sizeof...(Vals) == 0 || I == 0) {
-//			return Val;
+//		value_tuple_base<value_tuple_tag<T>, value_pack<Val, Vals...>>)
+// noexcept { 		static_assert(I < 1 + sizeof...(Vals)); 		if
+// constexpr (sizeof...(Vals) == 0 || I == 0) { 			return Val;
 //		}
 //		else {
-//			// auto filtered = []<std::size_t... Is>(std::index_sequence<Is...>) {
+//			// auto filtered = []<std::size_t...
+// Is>(std::index_sequence<Is...>) {
 //			//     return ([] {
 //			//         if constexpr (I == Is + 1) {
 //			//             return tuple_c<Vals>;
@@ -367,14 +371,16 @@ int main()
 //
 //			// -- or --
 //			return at<I - 1>(
-//				value_tuple_base<value_tuple_tag<T>, value_pack<Vals...>>{});
+//				value_tuple_base<value_tuple_tag<T>,
+// value_pack<Vals...>>{});
 //		}
 //	}
 //
 //	template <typename T, auto... Vals0, typename U, auto... Vals1>
 //	constexpr auto operator+(
 //		value_tuple_base<value_tuple_tag<T>, value_pack<Vals0...>>,
-//		value_tuple_base<value_tuple_tag<U>, value_pack<Vals1...>>) noexcept
+//		value_tuple_base<value_tuple_tag<U>, value_pack<Vals1...>>)
+// noexcept
 //		-> value_tuple_base<value_tuple_tag<std::common_type_t<T, U>>,
 //		value_pack<Vals0..., Vals1...>> {
 //		return {};
@@ -384,51 +390,52 @@ int main()
 //	constexpr auto operator+(
 //		value_tuple_base<value_tuple_tag<T>, value_pack<Vals0...>>,
 //		value_constant_base<Val>) noexcept
-//		-> value_tuple_base<value_tuple_tag<std::common_type_t<T, decltype(Val)>>,
-//		value_pack<Vals0 + Val...>> {
-//		return {};
+//		-> value_tuple_base<value_tuple_tag<std::common_type_t<T,
+// decltype(Val)>>, 		value_pack<Vals0 + Val...>> { 		return
+// {};
 //	}
 //
 //	template <typename T, auto... Vals0, auto Val>
 //	constexpr auto operator+(
 //		value_constant_base<Val> c,
-//		value_tuple_base<value_tuple_tag<T>, value_pack<Vals0...>> t) noexcept
+//		value_tuple_base<value_tuple_tag<T>, value_pack<Vals0...>> t)
+// noexcept
 //		-> decltype(t + c) {
 //		return {};
 //	}
-//}  // namespace detail
+// }  // namespace detail
 //
-//template <auto Val>
-//using value_constant = detail::value_constant_base<Val>;
+// template <auto Val>
+// using value_constant = detail::value_constant_base<Val>;
 //
-//template <auto Val>
-//static constexpr value_constant<Val> value_c{};
+// template <auto Val>
+// static constexpr value_constant<Val> value_c{};
 //
 ///// @brief A sequence of (possibly) hererogeneous values.
-//template <auto... Vals>
-//using value_tuple = detail::value_tuple_base<detail::value_tuple_tag<>,
+// template <auto... Vals>
+// using value_tuple = detail::value_tuple_base<detail::value_tuple_tag<>,
 //	detail::value_pack<Vals...>>;
 //
-//template <auto... Vals>
-//static constexpr value_tuple<Vals...> tuple_c{};
+// template <auto... Vals>
+// static constexpr value_tuple<Vals...> tuple_c{};
 //
 ///// @brief A sequence of homogeneous values.
-//template <typename T, auto... Vals>
-//using value_sequence = std::enable_if_t<
+// template <typename T, auto... Vals>
+// using value_sequence = std::enable_if_t<
 //	std::is_same_v<T, std::common_type_t<T, decltype(Vals)...>>,
 //	detail::value_tuple_base<detail::value_tuple_tag<T>,
 //	detail::value_pack<Vals...>>>;
 //
-//template <typename T, T... Vals>
-//static constexpr value_sequence<T, Vals...> array_c{};
+// template <typename T, T... Vals>
+// static constexpr value_sequence<T, Vals...> array_c{};
 //
-//using detail::at;
+// using detail::at;
 //
-//template <typename...>
-//void foo();
+// template <typename...>
+// void foo();
 //
-//template <typename T, auto... Vals>
-//void print(detail::value_tuple_base<detail::value_tuple_tag<T>,
+// template <typename T, auto... Vals>
+// void print(detail::value_tuple_base<detail::value_tuple_tag<T>,
 //	detail::value_pack<Vals...>>
 //	arg) {
 //	// foo<decltype(arg)>();
@@ -436,67 +443,67 @@ int main()
 //	fmt::print("[ ");
 //	(fmt::print("{} ", Vals), ...);
 //	fmt::print("]\n");
-//}
+// }
 //
 /////// @brief A sequence of homogeneous values.
 //// template <typename T, T... Vals>
 //// struct value_sequence : value_tuple<Vals...> {};
 //
-//int main() {
+// int main() {
 //	print(value_sequence<unsigned, 1>{});  // = array_c<float, 0>;
 //
 //	// print(value_c<1.3f> + array_c<int, 1, 1>);
 //	// return at<2>(tuple_c<0, 1, 2>);
 //}
 
-//#include <fmt/core.h>
+// #include <fmt/core.h>
 //
-//#include <climits>
-//#include <cstddef>
+// #include <climits>
+// #include <cstddef>
 //
-//template <typename...>
-//using void_t = void;
+// template <typename...>
+// using void_t = void;
 //
-//template <typename, typename = void>
-//struct is_valid : std::false_type {};
+// template <typename, typename = void>
+// struct is_valid : std::false_type {};
 //
-//template <typename T>
-//struct is_valid<T, void_t<T>> : std::true_type {};
+// template <typename T>
+// struct is_valid<T, void_t<T>> : std::true_type {};
 //
-//template <typename T>
-//struct type_constant {
+// template <typename T>
+// struct type_constant {
 //	using type = T;
-//};
+// };
 //
-//template <typename T>
-//type_constant(T&&)->type_constant<T>;
+// template <typename T>
+// type_constant(T&&)->type_constant<T>;
 //
-//template <typename T, typename U>
-//constexpr bool operator==(type_constant<T>, type_constant<U>) noexcept {
+// template <typename T, typename U>
+// constexpr bool operator==(type_constant<T>, type_constant<U>) noexcept {
 //	return std::is_same_v<T, U>;
-//}
+// }
 //
-//template <typename T>
-//static constexpr type_constant<T> type_c{};
+// template <typename T>
+// static constexpr type_constant<T> type_c{};
 //
-//template <typename... Ts>
-//static constexpr type_constant<
+// template <typename... Ts>
+// static constexpr type_constant<
 //	std::conditional_t<sizeof...(Ts), std::common_type_t<Ts...>, void>>
 //	common_type_c{};
 
 //// If all of `type_c<Ts>...` can be assigned to each other, `Ts...` are the
 //// same type.
-//template <typename... Ts>
-//struct are_same : is_valid<decltype((type_c<Ts> = ...))> {};
+// template <typename... Ts>
+// struct are_same : is_valid<decltype((type_c<Ts> = ...))> {};
 //
-//template <typename... Ts>
-//constexpr static bool are_same_v{ are_same<Ts...>::value };
+// template <typename... Ts>
+// constexpr static bool are_same_v{ are_same<Ts...>::value };
 //
-//template <bool Condition, typename IfTrue, typename IfFalse>
-//using if_ = std::conditional_t<Condition, IfTrue, IfFalse>;
+// template <bool Condition, typename IfTrue, typename IfFalse>
+// using if_ = std::conditional_t<Condition, IfTrue, IfFalse>;
 //
-//template <bool Condition, typename T = void>
-//using require_ = std::enable_if_t<Condition, T>;
+// template <bool Condition, typename T = void>
+// using require_ = std::enable_if_t<Condition, T>;
 //
 //
 //	//template <auto... Vals>
@@ -509,29 +516,33 @@ int main()
 //
 //	template <typename T, auto... Vals>
 //	struct value_tuple_base {
-//		static_assert(are_same_v<T, from_any> || are_same_v<T, decltype(Vals)...>);
+//		static_assert(are_same_v<T, from_any> || are_same_v<T,
+// decltype(Vals)...>);
 //	};
 //
 //	template <auto... Vals>
 //	struct value_tuple_base<from_any, Vals...> {
-//		/// @brief Implicit cast to homogeneous tuple (if all of `Vals...` can be
+//		/// @brief Implicit cast to homogeneous tuple (if all of
+//`Vals...` can be
 //		/// converted to `T` without narrowing).
 //		template <typename T>
-//		constexpr operator value_tuple_base < T, T{ Vals }... > () const noexcept {
-//			return {};
+//		constexpr operator value_tuple_base < T, T{ Vals }... > () const
+// noexcept { 			return {};
 //		}
 //	};
 //
 //	template <typename T, T... Vals>
 //	struct value_tuple_base<T, Vals...> {
-//		/// @brief Implicit cast to another tuple. This will cast both to:
-//		///  - an homogeneous tuple whose type `U` is such that casting from `T` to
+//		/// @brief Implicit cast to another tuple. This will cast both
+// to:
+//		///  - an homogeneous tuple whose type `U` is such that casting
+// from `T` to
 //		///  `U` doesn't narrow;
 //		///  - an heterogeneous tuple;
 //		template <typename U, typename U_ = if_<
 //			(common_type_c<T, U> == type_c<from_any>), T, U>>
-//			constexpr operator value_tuple_base < U, U_{ Vals }... > () const noexcept {
-//			return {};
+//			constexpr operator value_tuple_base < U, U_{ Vals }... >
+//() const noexcept { 			return {};
 //		}
 //	};
 //
@@ -542,7 +553,8 @@ int main()
 //			return Val;
 //		}
 //		else {
-//			// auto filtered = []<std::size_t... Is>(std::index_sequence<Is...>) {
+//			// auto filtered = []<std::size_t...
+// Is>(std::index_sequence<Is...>) {
 //			//     return ([] {
 //			//         if constexpr (I == Is + 1) {
 //			//             return tuple_c<Vals>;
@@ -561,15 +573,15 @@ int main()
 //	template <typename T, auto... Vals0, typename U, auto... Vals1>
 //	constexpr auto operator+(value_tuple_base<T, Vals0...>,
 //		value_tuple_base<U, Vals1...>) noexcept
-//		-> value_tuple_base<std::common_type_t<T, U>, Vals0..., Vals1...> {
-//		return {};
+//		-> value_tuple_base<std::common_type_t<T, U>, Vals0...,
+//Vals1...> { 		return {};
 //	}
 //
 //	template <typename T, auto... Vals0, auto Val>
 //	constexpr auto operator+(value_tuple_base<T, Vals0...>,
 //		value_constant_base<Val>) noexcept
-//		-> value_tuple_base<std::common_type_t<T, decltype(Val)>, Vals0 + Val...> {
-//		return {};
+//		-> value_tuple_base<std::common_type_t<T, decltype(Val)>, Vals0
+//+ Val...> { 		return {};
 //	}
 //
 //	template <typename T, auto... Vals0, auto Val>
@@ -579,18 +591,18 @@ int main()
 //		return {};
 //	}
 //
-//template <auto Val>
-//using value_constant = detail::value_constant_base<Val>;
+// template <auto Val>
+// using value_constant = detail::value_constant_base<Val>;
 //
-//template <auto Val>
-//static constexpr value_constant<Val> value_c{};
+// template <auto Val>
+// static constexpr value_constant<Val> value_c{};
 //
 ///// @brief A sequence of homogeneous values.
-//template <typename T, auto... Vals>
-//using value_sequence = detail::value_tuple_base < T, T{ Vals }... > ;
+// template <typename T, auto... Vals>
+// using value_sequence = detail::value_tuple_base < T, T{ Vals }... > ;
 //
-//template <typename T, auto... Vals>
-//static constexpr value_sequence < T, T{ Vals }... > array_c{};
+// template <typename T, auto... Vals>
+// static constexpr value_sequence < T, T{ Vals }... > array_c{};
 //
 ///// @brief A sequence of (possibly) hererogeneous values.
 //// template <auto... Vals>
@@ -601,15 +613,15 @@ int main()
 ////     value_sequence<std::common_type_t<decltype(Vals)...>, Vals...>,
 ////     detail::value_tuple_base<detail::from_any, Vals...>>;
 //
-//template <auto... Vals>
-//using value_tuple = detail::value_tuple_base<detail::from_any, Vals...>;
+// template <auto... Vals>
+// using value_tuple = detail::value_tuple_base<detail::from_any, Vals...>;
 //
-//template <auto... Vals>
-//static constexpr value_tuple<Vals...> tuple_c{};
+// template <auto... Vals>
+// static constexpr value_tuple<Vals...> tuple_c{};
 //
-//using detail::at;
+// using detail::at;
 //
-//namespace {
+// namespace {
 //
 //	template <typename...>
 //	void foo();
@@ -626,7 +638,7 @@ int main()
 //	void f(value_tuple<0, 1>) {}
 //}  // namespace
 //
-//int main() {
+// int main() {
 //
 //	auto seq = array_c<int, 0, 1, 2>;
 //	seq = tuple_c<0, 1, 2>;
