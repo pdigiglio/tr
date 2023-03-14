@@ -89,10 +89,6 @@ tuple(Ts const &...) -> tuple<Ts...>;
 template <typename... Ts>
 struct tup_size<tuple<Ts...>>
     : std::integral_constant<std::size_t, sizeof...(Ts)> {};
-
-template <std::size_t I, typename... Ts>
-struct tup_elem<I, tuple<Ts...>>
-    : decltype(tuple<Ts...>::template get_type<I>()) {};
 // --
 
 namespace detail {

@@ -24,16 +24,6 @@ static constexpr std::size_t tup_size_v{tup_size<T>::value};
 template <typename T>
 struct tup_size<T const> : tup_size<T> {};
 
-template <std::size_t I, typename T>
-struct tup_elem;
-
-template <std::size_t I, typename T>
-using tup_elem_t = typename tup_elem<I, T>::type;
-
-template <std::size_t I, typename T>
-struct tup_elem<I, T const>
-    : detail::type_identity<std::add_const<tup_elem_t<I, T>>> {};
-
 template <auto I, typename T,
           typename = std::enable_if_t<std::is_integral_v<decltype(I)>>>
 [[nodiscard]] constexpr decltype(auto) get(T &&tup,
