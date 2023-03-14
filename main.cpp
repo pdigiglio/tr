@@ -34,7 +34,8 @@
 //  3. Some kind of cx iota to generate compile time indices.
 
 namespace {
-template <typename...> void foo();
+template <typename...>
+void foo();
 
 struct TestFw {
     void test_fw() {
@@ -161,43 +162,45 @@ struct TestCombinator {
     }
 };
 
-// struct TestValueSequence
-//{
-// private:
-//	template <typename T, auto...Vals, std::size_t ... Is>
-//	void test_vals_impl(tr::value_sequence<T, Vals...> vs,
-// std::index_sequence<Is...>)
-//	{
-//		([](tr::value_sequence<T, Vals...> vs_) constexpr {
-//				using tr::at_;
-//				static_assert(at_<Is>(vs_) == Vals + 1);
+struct TestValueSequence {
+  private:
+    template <typename T, auto... Vals, std::size_t... Is>
+    void test_vals_impl(tr::value_sequence<T, Vals...> vs,
+                        std::index_sequence<Is...>) {
+        (
+            [](tr::value_sequence<T, Vals...> vs_) constexpr {
+#ifndef _MSC_VER
+                // VS: Expression did not evaluate to a constant (why?)
+                using tr::get;
+                static_assert(get<Is>(vs_) == tr::value_c<Vals>);
+#endif // !_MSC_VER
 
-//				using tr::ic;
-//				static_assert(vs_[ic<Is>] == Vals);
-//			}(vs), ...);
-//	}
+                static_assert(vs_[tr::ic<Is>] == tr::value_c<Vals>);
+            }(vs),
+            ...);
+    }
 
-//	template <typename T, auto...Vals>
-//	void test_vals(tr::value_sequence<T, Vals...> vs)
-//	{
-//		test_vals_impl(vs, std::make_index_sequence<sizeof...(Vals)>{});
-//	}
+  public:
+    void test() {
+        constexpr auto arr = tr::array_c<int, 0, 1, 2>;
+        test_vals_impl(arr, tr::iota_for(arr));
 
-// public:
-//	void test()
-//	{
-//		auto arr = tr::array_c<int, 0, 1, 2>;
-//		test_vals(arr);
+        auto const [a0, a1, a2] = arr;
+        static_assert(decltype(a0){} == tr::value_c<0>);
 
-//		auto tup = tr::tuple_c<0, 1, 2>;
-//		test_vals(tup);
+        auto tup = tr::tuple_c<'0', 1l, 2u>;
+        test_vals_impl(tup, tr::iota_for(tup));
 
-//		static_assert(std::is_aggregate_v<tr::value_array_constant<int,
-//0, 1, 2>>);
-// static_assert(std::is_aggregate_v<tr::value_tuple_constant<0, 'c', 2>>);
-//	}
+        auto const [t0, t1, t2] = tup;
+        static_assert(decltype(t0){} == tr::value_c<'0'>);
+        static_assert(decltype(t1){} == tr::value_c<1l>);
+        static_assert(decltype(t2){} == tr::value_c<2u>);
 
-//};
+        static_assert(
+            std::is_aggregate_v<tr::value_array_constant<int, 0, 1, 2>>);
+        static_assert(std::is_aggregate_v<tr::value_tuple_constant<0, 'c', 2>>);
+    }
+};
 } // namespace
 
 int main() {
