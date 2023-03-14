@@ -14,7 +14,7 @@ set(SOURCE_LIST
     tr/tuple.h
     tr/tuple_protocol.h
     tr/tuple_protocol/built_in_array.h
-    tr/tuple_protocol/std_index_sequence.h
+    tr/tuple_protocol/std_integer_sequence.h
     tr/tuple_protocol/std_pair.h
     tr/tuple_protocol/std_tuple.h
     tr/tuple_view.h
