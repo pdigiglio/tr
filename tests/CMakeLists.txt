@@ -1,0 +1,16 @@
+set(SOURCE_LIST
+    overload.cpp
+    main.cpp)
+
+add_executable(tests ${SOURCE_LIST})
+target_link_libraries(tests PRIVATE tr) 
+target_include_directories(tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+if (MSVC)
+    target_compile_options(tests PRIVATE /W4)
+else()
+    target_compile_options(tests PRIVATE -Wall -Wextra -Wpedantic)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(tests PRIVATE -Wno-missing-braces)
+    endif()
+endif()
