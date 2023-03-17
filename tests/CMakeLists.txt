@@ -1,5 +1,5 @@
 set(SOURCE_LIST
-    overload.cpp
+    overloaded.cpp
     main.cpp)
 
 add_executable(tests ${SOURCE_LIST})

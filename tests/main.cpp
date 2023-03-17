@@ -7,7 +7,7 @@
 #include "tr/combinator.h"
 #include "tr/detail/ebo.h"
 #include "tr/detail/utility.h"
-#include "tr/overload.h"
+#include "tr/overloaded.h"
 #include "tr/tuple.h"
 #include "tr/tuple_view.h"
 #include "tr/value_sequence.h"
@@ -240,11 +240,11 @@ int main() {
         static_assert(tr::count(p, 1) == 1);
 
         char const str[] = "hello";
-        auto const c =
-            tr::count_if(p, tr::overload{[](auto) { return false; },
-                                         [&str](char const *elem) {
-                                             return std::strcmp(elem, str) == 0;
-                                         }});
+        auto const c = tr::count_if(
+            p, tr::overloaded{[](auto) { return false; },
+                              [&str](char const *elem) {
+                                  return std::strcmp(elem, str) == 0;
+                              }});
 
         std::printf("occurrences of '%s': %td\n", str, c);
     }

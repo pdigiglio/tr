@@ -14,7 +14,7 @@ if (MSVC)
         tr/detail/type_pack.h
         tr/detail/type_traits.h
         tr/detail/utility.h
-        tr/overload.h
+        tr/overloaded.h
         tr/tuple.h
         tr/tuple_protocol.h
         tr/tuple_protocol/built_in_array.h
@@ -26,12 +26,12 @@ if (MSVC)
         tr/value_constant.h
         tr/value_sequence.h)
 
-    # [VS] Add project just to have a list of tr's header files.
-    add_executable(tr_headers ${TR_SOURCE_LIST})
-    target_link_libraries(tr_headers PRIVATE tr) 
-    set_target_properties(tr_headers PROPERTIES LINKER_LANGUAGE CXX)
-
     source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TR_SOURCE_LIST})
+    # [VS] Add target just to have a list of tr's header files.
+    add_custom_target(
+        tr_headers
+        SOURCES ${TR_SOURCE_LIST}
+        DEPENDS tr)
 endif()
 
 add_subdirectory(tests)
