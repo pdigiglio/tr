@@ -2,11 +2,10 @@
 #include <tr/type_constant.h>
 #include <tr/value_constant.h>
 
-// TODO: add a `select` utility to select an overload.
-
 using tr::overloaded;
 using tr::type_c;
 using tr::value_c;
+using tr::true_c;
 
 namespace {
 
@@ -14,9 +13,6 @@ template <typename Overload>
 constexpr auto is_aggregate(Overload) noexcept {
     return value_c<std::is_aggregate_v<Overload>>;
 }
-
-constexpr static auto true_c = value_c<true>;
-constexpr static auto false_c = value_c<false>;
 
 int foo(int) { return {}; }
 

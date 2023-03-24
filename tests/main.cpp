@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <array>
+#include <numeric>
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -61,45 +62,6 @@ struct TestFw {
     }
 };
 
-struct TestEbo {
-    void value_categories() {
-        using tr::detail::ebo;
-
-        struct tag_t {};
-        struct S {};
-        ebo<S, tag_t, true> ec{};
-        ebo<S, tag_t, false> e{};
-
-        static_assert(std::is_same_v<decltype(get_ebo_val(ec)),
-                                     decltype(get_ebo_val(e))>);
-
-        static_assert(std::is_same_v<decltype(get_ebo_val(std::as_const(ec))),
-                                     decltype(get_ebo_val(std::as_const(e)))>);
-
-        static_assert(std::is_same_v<decltype(get_ebo_val(std::move(ec))),
-                                     decltype(get_ebo_val(std::move(e)))>);
-
-        static_assert(
-            std::is_same_v<decltype(get_ebo_val(std::move(std::as_const(ec)))),
-                           decltype(get_ebo_val(std::move(std::as_const(e))))>);
-    }
-
-    void traits() {
-        using tr::detail::ebo;
-        using tr::detail::ebo_traits;
-
-        struct tag_t {};
-        struct S {};
-
-        struct S_final final {};
-        using func_ptr_t = void (*)();
-        static_assert(ebo_traits<ebo<S, tag_t>>::is_compressed);
-        static_assert(!ebo_traits<ebo<S_final, tag_t>>::is_compressed);
-        static_assert(!ebo_traits<ebo<S &, tag_t>>::is_compressed);
-        static_assert(!ebo_traits<ebo<int, tag_t>>::is_compressed);
-        static_assert(!ebo_traits<ebo<func_ptr_t, tag_t>>::is_compressed);
-    }
-};
 
 // Check that class tr::combinator behaves like I expect.
 struct TestCombinator {
@@ -201,9 +163,77 @@ struct TestValueSequence {
         static_assert(std::is_aggregate_v<tr::value_tuple_constant<0, 'c', 2>>);
     }
 };
+
+// -- array stuff
+template <typename T, std::size_t N, std::size_t... Is>
+constexpr auto
+flat_array_element_count_impl(T const (&)[N],
+                              std::index_sequence<Is...>) noexcept {
+    return tr::value_c<(std::extent_v<T[N], Is> * ...)>;
+}
+
+template <typename T, std::size_t N>
+constexpr auto flat_array_element_count(T const (&arr)[N]) noexcept {
+    constexpr auto rank = std::rank_v<T[N]>;
+    return flat_array_element_count_impl(arr, std::make_index_sequence<rank>{});
+}
+
+template <typename T>
+constexpr auto flat_array_element_count(T const &) noexcept {
+    return tr::value_c<1>;
+}
+
+template <std::size_t I, typename Arr, std::size_t... Is>
+constexpr decltype(auto)
+flat_array_at_impl(Arr &&arr, std::index_sequence<Is...>) noexcept {
+
+    constexpr auto atImpl = [](auto &&arr, auto idx) -> decltype(auto) {
+        auto div = flat_array_element_count(arr[0]);
+        return tr::detail::forward_like<Arr>(arr[idx.value / div.value]);
+    };
+
+    tr::combinator const at{atImpl, std::forward<Arr>(arr)};
+    return (at | ... | tr::value_c<Is>)();
+}
+
+template <std::size_t I, typename T, std::size_t N>
+constexpr decltype(auto) flat_array_at(T const (&arr)[N]) noexcept {
+    constexpr auto rank = std::rank_v<T[N]>;
+    return flat_array_at_impl<I>(arr, std::make_index_sequence<rank>{});
+}
+
+template <std::size_t N, std::size_t... Is>
+auto f() {
+
+    std::size_t sizes[]{Is..., 1};
+    std::reverse(std::begin(sizes), std::end(sizes));
+    std::partial_sum(std::cbegin(sizes), std::cend(sizes), std::begin(sizes),
+                     std::multiplies<>{});
+
+    std::reverse(std::begin(sizes), std::end(sizes));
+
+    tr::for_each(sizes, [](auto i) { std::printf("%zu ", i); });
+    std::puts("");
+
+    std::pair<std::size_t, std::size_t> out[sizeof...(Is)]{};
+    std::inclusive_scan(
+        std::cbegin(sizes) + 1, std::cend(sizes), std::begin(out),
+        [](auto p, auto v) {
+            return std::pair{p.second / v, p.second % v};
+        },
+        std::pair<std::size_t, std::size_t>{0, N});
+
+    tr::for_each(out,
+                 [](auto i) { std::printf("(%zu, %zu) ", i.first, i.second); });
+    std::puts("");
+}
+
+// --
 } // namespace
 
 int main() {
+    f<5, 2, 3>();
+
     using tr::tuple;
 
     constexpr std::pair p{"hello", 1};
@@ -283,6 +313,34 @@ int main() {
 
         // foo<decltype(view)>();
     }
+
+    {
+        constexpr int arr[3][5]{{0, 1, 2}};
+
+        constexpr auto atImpl = [](auto &&arr, auto idx) -> decltype(auto) {
+            return std::forward<decltype(arr)>(arr)[idx];
+        };
+
+        constexpr tr::combinator at{atImpl, arr};
+        //foo<decltype(at)>();
+
+        //constexpr auto at_0 = at | 0;
+        //foo<decltype(at_0)>();
+
+        //constexpr auto at_00 = at_0 | 1;
+        //foo<decltype(at_00)>();
+
+        static_assert((at | tr::value_c<0> | 1)() == 1);
+
+        //return (at | ... | tr::value_c<Is>)();
+
+        flat_array_at<1>(arr);
+    }
+
+    //{
+    //    int arr[3][4]{};
+    //    tr::apply(tr::array_c<std::size_t, 0, 1>, []() {});
+    //}
 
     // char const str[] = "hello";
     // tr::tuple<int, int[2], int, int> t0{ 1,{1,2},3,4 };

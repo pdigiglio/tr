@@ -12,8 +12,8 @@ namespace detail {
 template <typename Tuple, typename UnaryFunc, std::size_t... Is>
 constexpr UnaryFunc for_each(Tuple &&tuple, UnaryFunc pred,
                              std::index_sequence<Is...>) {
-    using tr::get;
-    (pred(get<Is>(std::forward<Tuple>(tuple))), ...);
+    //using tr::get;
+    (pred(tr::get<Is>(std::forward<Tuple>(tuple))), ...);
     return pred;
 }
 

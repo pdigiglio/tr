@@ -1,5 +1,7 @@
 set(SOURCE_LIST
+    ebo.cpp
     overloaded.cpp
+    tuple.cpp
     main.cpp)
 
 add_executable(tests ${SOURCE_LIST})

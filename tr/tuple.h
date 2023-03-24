@@ -6,15 +6,100 @@
 #include "tuple_protocol.h"
 
 #include <cstddef>
+#include <type_traits>
 #include <utility>
 
 namespace tr {
+template <typename T>
+using as_array = std::enable_if_t<std::is_array_v<T>, T>;
+
 namespace detail {
+
+/// @brief Tag type for tuple elements.
 template <std::size_t>
 struct tuple_tag;
 
+/// @brief An empty-base-optimized class that adds special behavior to `ebo`
+/// when the wrapped type is a built-in array.
+/// @tparam T The wrapped type.
+/// @tparam I An index type.
 template <typename T, std::size_t I>
-struct tup_elem : ebo<T, tuple_tag<I>> {
+struct tup_elem_base : ebo<T, tuple_tag<I>> {};
+
+template <typename T, std::size_t N, std::size_t... Is>
+[[nodiscard]] constexpr auto
+flat_array_extent_impl(T const (&)[N], std::index_sequence<Is...>) noexcept {
+    return std::integral_constant<std::size_t,
+                                  (std::extent_v<T[N], Is> * ...)>{};
+}
+
+template <typename T, std::size_t N>
+[[nodiscard]] constexpr auto flat_array_extent(T const (&arr)[N]) noexcept {
+    constexpr auto rank = std::rank_v<T[N]>;
+    return flat_array_extent_impl(arr, std::make_index_sequence<rank>{});
+}
+
+template <typename T, std::size_t N>
+[[nodiscard]] constexpr auto
+flat_sequence_for_array(T const (&arr)[N]) noexcept {
+    auto flatExtent = flat_array_extent(arr);
+    return std::make_index_sequence<flatExtent>{};
+}
+
+template <std::size_t I, typename Arr>
+[[nodiscard]] constexpr decltype(auto) flat_array_at_impl(Arr &&arr) noexcept {
+    using array_t = remove_cvref_t<Arr>;
+    static_assert(
+        std::is_array_v<array_t>,
+        "Arr is not an array, nor a cv-ref qualified reference to one");
+
+    constexpr auto extent = std::extent_v<array_t>;
+    constexpr auto rank = std::rank_v<array_t>;
+    if constexpr (rank == 1) {
+        static_assert(I < extent, "Index out of bounds");
+        return forward_like<Arr>(arr[I]);
+    } else {
+        using elem_extent_t = decltype(flat_array_extent(arr[0]));
+        constexpr auto row = I / elem_extent_t::value;
+        constexpr auto rest = I % elem_extent_t::value;
+
+        static_assert(row < extent, "Index out of bounds");
+        return flat_array_at<rest>(arr[row]);
+    }
+}
+
+template <std::size_t I, typename T, std::size_t N>
+[[nodiscard]] constexpr decltype(auto)
+flat_array_at(T const (&arr)[N]) noexcept {
+    return flat_array_at_impl<I>(arr);
+}
+
+template <std::size_t I, typename T, std::size_t N>
+[[nodiscard]] constexpr decltype(auto) flat_array_at(T(&&arr)[N]) noexcept {
+    return flat_array_at_impl<I>(std::move(arr));
+}
+
+template <typename T, std::size_t N, std::size_t I>
+struct tup_elem_base<T[N], I> : ebo<T[N], tuple_tag<I>> {
+    constexpr tup_elem_base() noexcept = default;
+
+    template <std::size_t M, typename = std::enable_if_t<(M <= N)>> 
+    constexpr tup_elem_base(T const (&arr)[M])
+        : tup_elem_base(arr, flat_sequence_for_array(arr)) {}
+
+    template <std::size_t M, typename = std::enable_if_t<(M <= N)>> 
+    constexpr tup_elem_base(T(&&arr)[M])
+        : tup_elem_base(std::move(arr), flat_sequence_for_array(arr)) {}
+
+    template <typename Arr, std::size_t... Is>
+    constexpr tup_elem_base(Arr &&arr, std::index_sequence<Is...>)
+        : ebo<T[N], tuple_tag<I>>{
+              flat_array_at<Is>(std::forward<Arr>(arr))...} {}
+};
+
+template <typename T, std::size_t I>
+struct tup_elem : tup_elem_base<T, I> {
+
     template <typename Int>
     constexpr T const &
     operator[](std::integral_constant<Int, I> ic) const &noexcept {
@@ -36,17 +121,6 @@ struct tup_elem : ebo<T, tuple_tag<I>> {
     constexpr T &&operator[](std::integral_constant<Int, I> ic) &&noexcept {
         return tup_elem::subscript_impl(std::move(*this), ic);
     }
-
-    ///// @brief An undefined member function to query the type of this
-    ///// tup_elem in traits like std::tuple_element.
-    /////
-    ///// @tparam J An index that't only used to match it against \c I.
-    /////
-    ///// @return `type_identity<T>`. If I return `T` directly, I can't
-    ///// use this technique to query the type of a `tup_elem<T[N]>`, as
-    ///// I can't return arrays.
-    // template <std::size_t J, typename = std::enable_if_t<I == J>>
-    // static type_identity<T> get_type() /* undefined */;
 
     /// @brief An undefined member function to query the type of this
     /// tup_elem in traits like std::tuple_element.
