@@ -36,6 +36,9 @@ struct value_constant {
 template <auto Val>
 static constexpr value_constant<Val> value_c{};
 
+static constexpr auto true_c = value_c<true>;
+static constexpr auto false_c = value_c<false>;
+
 // template <int Val>
 // static constexpr value_constant<Val> ic{};
 
