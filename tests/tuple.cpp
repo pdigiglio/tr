@@ -8,12 +8,21 @@
 using tr::false_c;
 using tr::true_c;
 using tr::type_c;
+using tr::value_c;
 
 namespace {
 
+struct SwapDeleted {
+    friend auto swap(SwapDeleted &, SwapDeleted &) -> void = delete;
+};
+
+struct NotMoveable {
+    NotMoveable(NotMoveable &&) = delete;
+};
+
 template <typename... Ts, template <typename...> typename Tup, typename... Us>
 constexpr auto deduced_types_equal(Tup<Us...>) noexcept {
-    return ((type_c<Ts> == type_c<Us>)&&...);
+    return value_c<((type_c<Ts> == type_c<Us>)&&... && true)>;
 }
 
 template <typename... Ts>
@@ -94,6 +103,63 @@ struct TestTuple {
             static_assert(
                 deduced_types_equal<int[3]>(tr::tuple{as_array<int[3]>{}}));
             static_assert(deduced_types_equal<int[3]>(tr::tuple{arr}));
+        }
+
+        {
+            // Make sure tuple with no type argument compiles
+            (void)tr::tuple<>{};
+        }
+    }
+
+    void test_swap() {
+        using std::swap;
+
+        {
+            tr::tuple lhs{0, "hello", 0.2};
+            auto deducedOk = deduced_types_equal<int, char[6], double>(lhs);
+            static_assert(deducedOk == true_c);
+
+            int i{};
+            double d{};
+            char buffer[6]{};
+            tr::tuple<int &, char(&)[6], double &> rhs{i, buffer, d};
+
+            lhs.swap(rhs);
+            rhs.swap(lhs);
+
+            swap(lhs, rhs);
+            swap(rhs, lhs);
+            static_assert(
+                std::is_swappable_with_v<decltype(rhs) &, decltype(rhs) &>);
+
+            swap(lhs, lhs);
+            static_assert(std::is_swappable_v<decltype(lhs)>);
+
+            swap(rhs, rhs);
+            static_assert(std::is_swappable_v<decltype(rhs)>);
+        }
+
+        {
+            // SwapDeleted is not swappable because I explicitly introduced a
+            // deleted swap() overload.
+            static_assert(!std::is_swappable_v<SwapDeleted>);
+            static_assert(!std::is_swappable_v<tr::tuple<SwapDeleted>>);
+            static_assert(!std::is_swappable_with_v<tr::tuple<SwapDeleted>&, tr::tuple<SwapDeleted&>&>);
+        }
+
+        {
+            // NotMoveable is not swappable because the default std::swap
+            // implementation requires its argument to be move-assignable.
+            static_assert(!std::is_swappable_v<NotMoveable >);
+            static_assert(!std::is_swappable_v<tr::tuple<NotMoveable>>);
+            static_assert(!std::is_swappable_with_v<tr::tuple<NotMoveable>&, tr::tuple<NotMoveable&>&>);
+        }
+
+        {
+            tr::tuple<> lhs, rhs;
+            static_assert(std::is_swappable_v<tr::tuple<>>);
+            lhs.swap(rhs);
+            swap(lhs, rhs);
         }
     }
 
