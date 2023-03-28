@@ -81,16 +81,17 @@ template <std::size_t I, typename T, std::size_t N>
 
 template <typename T, std::size_t N, std::size_t I>
 struct tup_elem_base<T[N], I> : ebo<T[N], tuple_tag<I>> {
-    constexpr tup_elem_base() noexcept = default;
+    constexpr tup_elem_base() noexcept : ebo<T[N], tuple_tag<I>>{} {}
 
-    template <std::size_t M, typename = std::enable_if_t<(M <= N)>>
+    template <std::size_t M>
     constexpr tup_elem_base(T const (&arr)[M])
         : tup_elem_base(arr, flat_sequence_for_array(arr)) {}
 
-    template <std::size_t M, typename = std::enable_if_t<(M <= N)>>
+    template <std::size_t M>
     constexpr tup_elem_base(T(&&arr)[M])
         : tup_elem_base(std::move(arr), flat_sequence_for_array(arr)) {}
 
+  private:
     template <typename Arr, std::size_t... Is>
     constexpr tup_elem_base(Arr &&arr, std::index_sequence<Is...>)
         : ebo<T[N], tuple_tag<I>>{
@@ -160,11 +161,6 @@ struct tup_elem : tup_elem_base<T, I> {
     static type_identity<T>
         get_type(std::integral_constant<std::size_t, I>) /* undefined */;
 
-    [[nodiscard]] constexpr tup_elem &
-    get_tup_elem(std::integral_constant<std::size_t, I>) &noexcept {
-        return *this;
-    }
-
   private:
     template <typename TupElem, typename Int,
               typename = std::enable_if_t<std::is_integral_v<Int>>>
@@ -226,6 +222,9 @@ template <typename... Ts>
 struct tuple : detail::tuple_base<detail::type_pack<Ts...>,
                                   std::index_sequence_for<Ts...>> {};
 
+template <typename... Ts>
+tuple(Ts const &...) -> tuple<Ts...>;
+
 /// @brief Swap two tuples.
 /// @param lhs The left-hand-side tuple.
 /// @param rhs The right-hand-side tuple.
@@ -264,8 +263,24 @@ auto swap(tuple<Ts...> &, tuple<Ts...> &)
                            std::index_sequence_for<Ts...>>>::swappable> =
     delete;
 
+/// @brief Creates a tuple of l-value references to its arguments. This is
+/// analogous to `std::tie`.
+/// @param ...args Any number of l-value arguments to construct the `tuple`.
+/// @return A `tuple` object containing l-value references.
 template <typename... Ts>
-tuple(Ts const &...) -> tuple<Ts...>;
+[[nodiscard]] constexpr tuple<Ts &...> tie(Ts &...args) noexcept {
+    return {args...};
+}
+
+/// @brief aaa
+/// @tparam ...Ts 
+/// @param ...args 
+/// @return 
+template <typename... Ts>
+[[nodiscard]] constexpr tuple<Ts &&...>
+forward_as_tuple(Ts &&...args) noexcept {
+    return {std::forward<Ts>(args)...};
+}
 
 // -- Tuple protocol
 template <typename... Ts>

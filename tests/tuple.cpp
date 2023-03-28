@@ -74,9 +74,16 @@ struct TestTuple {
             using tr::as_array;
             using tr::ic;
 
-            // Make sure I can construct and (kind-of) aggregate-initialize a
-            // tuple with an element of array type.
-            (void)tr::tuple<int, int[3]>{0, {}};
+            {
+                // Make sure I can construct and (kind-of) aggregate-initialize
+                // a tuple with an element of array type.
+                constexpr tr::tuple<int, int[3]> t{0, {}};
+
+                // Make sure the array is value-initialized.
+                static_assert(t[ic<1>][0] == 0);
+                static_assert(t[ic<1>][1] == 0);
+                static_assert(t[ic<1>][2] == 0);
+            }
 
             // Make sure the construction works fine with multi-dimensional
             // arrays too.
@@ -116,13 +123,16 @@ struct TestTuple {
 
         {
             tr::tuple lhs{0, "hello", 0.2};
-            auto deducedOk = deduced_types_equal<int, char[6], double>(lhs);
-            static_assert(deducedOk == true_c);
+            static_assert(decltype(deduced_types_equal<int, char[6], double>(
+                lhs))::value);
 
             int i{};
             double d{};
             char buffer[6]{};
-            tr::tuple<int &, char(&)[6], double &> rhs{i, buffer, d};
+            auto rhs = tr::tie(i, buffer, d);
+            static_assert(
+                decltype(deduced_types_equal<int &, char(&)[6], double &>(
+                    rhs))::value);
 
             lhs.swap(rhs);
             rhs.swap(lhs);
