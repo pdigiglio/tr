@@ -6,6 +6,7 @@
 #include <type_traits>
 
 namespace tr {
+
 template <auto Val>
 struct value_constant {
     using type = decltype(Val);
@@ -13,10 +14,10 @@ struct value_constant {
 
     [[nodiscard]] constexpr operator type() const noexcept { return Val; }
 
-    template <typename T>
-    [[nodiscard]] constexpr operator T() const noexcept {
+    template <typename T, typename = std::enable_if_t<!std::is_same_v<T, type>>>
+    [[nodiscard]] constexpr explicit operator T() const noexcept {
         return T{Val};
-        //     ^ prevent narrowing conversions (on assignments).
+        //     ^ prevent narrowing conversions (on explicit casts).
     }
 
     template <auto OtherVal>
@@ -38,12 +39,6 @@ static constexpr value_constant<Val> value_c{};
 
 static constexpr auto true_c = value_c<true>;
 static constexpr auto false_c = value_c<false>;
-
-// template <int Val>
-// static constexpr value_constant<Val> ic{};
-
-// template <std::size_t Val>
-// static constexpr value_constant<Val> zuic{};
 
 template <unsigned Val>
 static constexpr value_constant<Val> uic{};

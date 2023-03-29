@@ -1,6 +1,7 @@
 #pragma once
 
 #include "detail/type_traits.h"
+#include "detail/utility.h"
 #include "value_constant.h"
 
 #include <cstddef>
@@ -9,9 +10,16 @@
 
 namespace tr {
 namespace detail {
+
+/// @brief A utility class that's implicitly constructible from any other type.
+/// The common type between `from_any` and any other type is `from_any`.
 struct from_any {
+
+    /// @brief Implicit (undefined) constructor from any type.
+    /// @tparam T 
+    /// @param  
     template <typename T>
-    /* implicit */ constexpr from_any(T) noexcept /* undefined */;
+    /* implicit */ constexpr from_any(T&&) noexcept /* undefined */;
 };
 
 template <std::size_t I, auto Val>
@@ -43,9 +51,9 @@ struct value_sequence
     : detail::value_sequence_impl<T, std::make_index_sequence<sizeof...(Vals)>,
                                   Vals...> {};
 
-template <typename T, auto... Vals>
-struct tup_size<value_sequence<T, Vals...>>
-    : std::integral_constant<std::size_t, sizeof...(Vals)> {};
+//template <typename T, auto... Vals>
+//struct tup_size<value_sequence<T, Vals...>>
+//    : std::integral_constant<std::size_t, sizeof...(Vals)> {};
 
 /// @brief Get the `I`-th element of the `value_sequence`
 /// @return

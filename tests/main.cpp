@@ -124,86 +124,9 @@ struct TestCombinator {
     }
 };
 
-struct TestValueSequence {
-  private:
-    template <typename T, auto... Vals, std::size_t... Is>
-    void test_vals_impl(tr::value_sequence<T, Vals...> vs,
-                        std::index_sequence<Is...>) {
-        (
-            [](tr::value_sequence<T, Vals...> vs_) constexpr {
-#ifndef _MSC_VER
-                // VS: Expression did not evaluate to a constant (why?)
-                using tr::get;
-                static_assert(get<Is>(vs_) == tr::value_c<Vals>);
-#endif // !_MSC_VER
-
-                static_assert(vs_[tr::ic<Is>] == tr::value_c<Vals>);
-            }(vs),
-            ...);
-    }
-
-  public:
-    void test() {
-        constexpr auto arr = tr::array_c<int, 0, 1, 2>;
-        test_vals_impl(arr, tr::iota_for(arr));
-
-        auto const [a0, a1, a2] = arr;
-        static_assert(decltype(a0){} == tr::value_c<0>);
-
-        auto tup = tr::tuple_c<'0', 1l, 2u>;
-        test_vals_impl(tup, tr::iota_for(tup));
-
-        auto const [t0, t1, t2] = tup;
-        static_assert(decltype(t0){} == tr::value_c<'0'>);
-        static_assert(decltype(t1){} == tr::value_c<1l>);
-        static_assert(decltype(t2){} == tr::value_c<2u>);
-
-        static_assert(
-            std::is_aggregate_v<tr::value_array_constant<int, 0, 1, 2>>);
-        static_assert(std::is_aggregate_v<tr::value_tuple_constant<0, 'c', 2>>);
-    }
-};
-
-// -- array stuff
-template <typename T, std::size_t N, std::size_t... Is>
-constexpr auto
-flat_array_element_count_impl(T const (&)[N],
-                              std::index_sequence<Is...>) noexcept {
-    return tr::value_c<(std::extent_v<T[N], Is> * ...)>;
-}
-
-template <typename T, std::size_t N>
-constexpr auto flat_array_element_count(T const (&arr)[N]) noexcept {
-    constexpr auto rank = std::rank_v<T[N]>;
-    return flat_array_element_count_impl(arr, std::make_index_sequence<rank>{});
-}
-
-template <typename T>
-constexpr auto flat_array_element_count(T const &) noexcept {
-    return tr::value_c<1>;
-}
-
-template <std::size_t I, typename Arr, std::size_t... Is>
-constexpr decltype(auto)
-flat_array_at_impl(Arr &&arr, std::index_sequence<Is...>) noexcept {
-
-    constexpr auto atImpl = [](auto &&arr, auto idx) -> decltype(auto) {
-        auto div = flat_array_element_count(arr[0]);
-        return tr::detail::forward_like<Arr>(arr[idx.value / div.value]);
-    };
-
-    tr::combinator const at{atImpl, std::forward<Arr>(arr)};
-    return (at | ... | tr::value_c<Is>)();
-}
-
-template <std::size_t I, typename T, std::size_t N>
-constexpr decltype(auto) flat_array_at(T const (&arr)[N]) noexcept {
-    constexpr auto rank = std::rank_v<T[N]>;
-    return flat_array_at_impl<I>(arr, std::make_index_sequence<rank>{});
-}
 
 template <std::size_t N, std::size_t... Is>
-auto f() {
+auto array_indexing() {
 
     std::size_t sizes[]{Is..., 1};
     std::reverse(std::begin(sizes), std::end(sizes));
@@ -232,7 +155,7 @@ auto f() {
 } // namespace
 
 int main() {
-    f<5, 2, 3>();
+    array_indexing<5, 2, 3>();
 
     using tr::tuple;
 
@@ -298,11 +221,11 @@ int main() {
     }
 
     {
-
         // tr::tuple t{ 0,0,0,0,0 };
-        std::uint8_t t[32]{};
+        std::int8_t t[128]{};
         // tr::for_each(tr::iota_for(t), [&t](auto i) { tr::get(t, i) = i; });
-        tr::for_each(tr::iota_for(t), [&t](auto i) { tr::get<i>(t) = i; });
+        tr::for_each(tr::iota_for(t),
+                     [&t](auto i) { tr::get<i>(t) = std::int8_t{i}; });
 
         // auto view0 = tr::drop_first<1>(t);
         // auto view1 = tr::drop_first<1>(view0);
@@ -314,28 +237,28 @@ int main() {
         // foo<decltype(view)>();
     }
 
-    {
-        constexpr int arr[3][5]{{0, 1, 2}};
+    //{
+    //    constexpr int arr[3][5]{{0, 1, 2}};
 
-        constexpr auto atImpl = [](auto &&arr, auto idx) -> decltype(auto) {
-            return std::forward<decltype(arr)>(arr)[idx];
-        };
+    //    static constexpr auto atImpl = [](auto &&arr, auto idx) -> decltype(auto) {
+    //        return std::forward<decltype(arr)>(arr)[idx];
+    //    };
 
-        constexpr tr::combinator at{atImpl, arr};
-        //foo<decltype(at)>();
+    //    constexpr tr::combinator at{atImpl, arr};
+    //    //foo<decltype(at)>();
 
-        //constexpr auto at_0 = at | 0;
-        //foo<decltype(at_0)>();
+    //    //constexpr auto at_0 = at | 0;
+    //    //foo<decltype(at_0)>();
 
-        //constexpr auto at_00 = at_0 | 1;
-        //foo<decltype(at_00)>();
+    //    //constexpr auto at_00 = at_0 | 1;
+    //    //foo<decltype(at_00)>();
 
-        static_assert((at | tr::value_c<0> | 1)() == 1);
+    //    static_assert((at | tr::value_c<0> | 1)() == 1);
 
-        //return (at | ... | tr::value_c<Is>)();
+    //    //return (at | ... | tr::value_c<Is>)();
 
-        flat_array_at<1>(arr);
-    }
+    //    flat_array_at<1>(arr);
+    //}
 
     //{
     //    int arr[3][4]{};

@@ -3,6 +3,7 @@ set(SOURCE_LIST
     overloaded.cpp
     tuple.cpp
     type_constant.cpp
+    value_sequence.cpp
     main.cpp)
 
 add_executable(tests ${SOURCE_LIST})
