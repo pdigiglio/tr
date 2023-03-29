@@ -1,9 +1,11 @@
 set(SOURCE_LIST
     ebo.cpp
     overloaded.cpp
+    std_integer_sequence.cpp
     tuple.cpp
     type_constant.cpp
     value_sequence.cpp
+    # --
     main.cpp)
 
 add_executable(tests ${SOURCE_LIST})

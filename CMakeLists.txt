@@ -9,11 +9,16 @@ target_compile_features(tr INTERFACE cxx_std_17)
 if (MSVC)
     set(TR_SOURCE_LIST
         tr/algorithm.h
+        tr/at.h
         tr/combinator.h
         tr/detail/ebo.h
         tr/detail/type_pack.h
         tr/detail/type_traits.h
         tr/detail/utility.h
+        tr/fwd/at.h
+        tr/fwd/length.h
+        tr/fwd/unimplemented.h
+        tr/length.h
         tr/overloaded.h
         tr/tuple.h
         tr/tuple_protocol.h
@@ -23,6 +28,7 @@ if (MSVC)
         tr/tuple_protocol/std_tuple.h
         tr/tuple_view.h
         tr/type_constant.h
+        tr/unimplemented.h
         tr/value_constant.h
         tr/value_sequence.h)
 
@@ -33,5 +39,8 @@ if (MSVC)
         SOURCES ${TR_SOURCE_LIST}
         DEPENDS tr)
 endif()
+
+# Doesn't work
+#set(CMAKE_CXX_CLANG_TIDY "clang-tidy.exe;-checks='modernize-*'")
 
 add_subdirectory(tests)

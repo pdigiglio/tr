@@ -1,4 +1,7 @@
 #include <tr/tuple.h>
+
+#include <tr/at.h>
+#include <tr/length.h>
 #include <tr/type_constant.h>
 #include <tr/value_constant.h>
 
@@ -9,8 +12,21 @@ using tr::false_c;
 using tr::true_c;
 using tr::type_c;
 using tr::value_c;
+using tr::zuic;
 
 namespace {
+
+template <typename T, std::size_t N, std::size_t... Is>
+constexpr bool array_equal_impl(T const (&lhs)[N], T const (&rhs)[N],
+                                std::index_sequence<Is...>) {
+    using tr::at_c;
+    return ((at_c<Is>(lhs) == at_c<Is>(rhs)) && ...);
+}
+
+template <typename T, std::size_t N>
+constexpr bool array_equal(T const (&lhs)[N], T const (&rhs)[N]) {
+    return array_equal_impl(lhs, rhs, std::make_index_sequence<N>{});
+}
 
 struct SwapDeleted {
     friend auto swap(SwapDeleted &, SwapDeleted &) -> void = delete;
@@ -154,15 +170,19 @@ struct TestTuple {
             // deleted swap() overload.
             static_assert(!std::is_swappable_v<SwapDeleted>);
             static_assert(!std::is_swappable_v<tr::tuple<SwapDeleted>>);
-            static_assert(!std::is_swappable_with_v<tr::tuple<SwapDeleted>&, tr::tuple<SwapDeleted&>&>);
+            static_assert(
+                !std::is_swappable_with_v<tr::tuple<SwapDeleted> &,
+                                          tr::tuple<SwapDeleted &> &>);
         }
 
         {
             // NotMoveable is not swappable because the default std::swap
             // implementation requires its argument to be move-assignable.
-            static_assert(!std::is_swappable_v<NotMoveable >);
+            static_assert(!std::is_swappable_v<NotMoveable>);
             static_assert(!std::is_swappable_v<tr::tuple<NotMoveable>>);
-            static_assert(!std::is_swappable_with_v<tr::tuple<NotMoveable>&, tr::tuple<NotMoveable&>&>);
+            static_assert(
+                !std::is_swappable_with_v<tr::tuple<NotMoveable> &,
+                                          tr::tuple<NotMoveable &> &>);
         }
 
         {
@@ -219,6 +239,42 @@ struct TestTuple {
         //        tie = tuple0_t{};
         //    }
         //}
+    }
+
+    void test_at() {
+        using tr::tuple, tr::at;
+
+        constexpr char str[] = "hello";
+        constexpr tuple t{0, 1, str};
+        static_assert(at(t, zuic<0>) == t[zuic<0>]);
+        static_assert(at(t, zuic<1>) == t[zuic<1>]);
+
+        // Compare addresses
+        static_assert(at(t, zuic<2>) == &t[zuic<2>][0]);
+        // Compare elements
+        static_assert(array_equal(at(t, zuic<2>), t[zuic<2>]));
+        static_assert(array_equal(at(t, zuic<2>), str));
+
+        using tr::at_c;
+        static_assert(at_c<0>(t) == t[zuic<0>]);
+        static_assert(at_c<1>(t) == t[zuic<1>]);
+        static_assert(array_equal(at_c<2>(t), str));
+    }
+
+    void test_length() {
+        using tr::tuple, tr::length;
+
+        tuple empty{};
+        static_assert(length(empty) == 0);
+
+        tuple oneElem{0};
+        static_assert(length(oneElem) == 1);
+
+        tuple twoElems{0, tuple{}};
+        static_assert(length(twoElems) == 2);
+
+        int fourElems[]{0, 1, 2, 3};
+        static_assert(length(fourElems) == 4);
     }
 };
 } // namespace

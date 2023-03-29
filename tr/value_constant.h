@@ -1,7 +1,5 @@
 #pragma once
 
-#include "detail/type_traits.h"
-
 #include <cstddef>
 #include <type_traits>
 

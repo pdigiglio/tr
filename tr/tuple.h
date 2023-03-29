@@ -1,5 +1,8 @@
 #pragma once
 
+#include "./fwd/at.h"
+#include "./fwd/length.h"
+
 #include "./detail/ebo.h"
 #include "./detail/type_pack.h"
 #include "./detail/type_traits.h"
@@ -311,6 +314,23 @@ template <std::size_t I, typename... Ts>
 constexpr decltype(auto) get(tuple<Ts...> &&t) noexcept {
     return detail::tuple_get<I>(std::move(t));
 }
+
+template <typename... Ts>
+struct at_impl<tuple<Ts...>> {
+    template <typename Iterable, typename Idx>
+    static constexpr decltype(auto) apply(Iterable &&tuple, Idx) noexcept {
+        return std::forward<Iterable>(tuple)[Idx{}];
+    }
+};
+
+template <typename... Ts>
+struct length_impl<tuple<Ts...>> {
+    template <typename Iterable>
+    static constexpr value_constant<sizeof...(Ts)> apply(Iterable &&) noexcept {
+        return {};
+    }
+};
+
 } // namespace tr
 
 namespace std {
