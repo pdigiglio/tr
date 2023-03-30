@@ -6,7 +6,8 @@
 #include "./detail/ebo.h"
 #include "./detail/type_pack.h"
 #include "./detail/type_traits.h"
-#include "tuple_protocol.h"
+#include "./tuple_protocol.h"
+#include "./type_identity.h"
 
 #include <cstddef>
 #include <type_traits>
@@ -266,19 +267,19 @@ auto swap(tuple<Ts...> &, tuple<Ts...> &)
                            std::index_sequence_for<Ts...>>>::swappable> =
     delete;
 
-/// @brief Creates a tuple of l-value references to its arguments. This is
+/// @brief Creates a `tuple` of l-value references to its arguments. This is
 /// analogous to `std::tie`.
 /// @param ...args Any number of l-value arguments to construct the `tuple`.
-/// @return A `tuple` object containing l-value references.
+/// @return A `tuple` of l-value references.
 template <typename... Ts>
 [[nodiscard]] constexpr tuple<Ts &...> tie(Ts &...args) noexcept {
     return {args...};
 }
 
-/// @brief aaa
-/// @tparam ...Ts 
-/// @param ...args 
-/// @return 
+/// @brief Creates a `tuple` of l- or r-value references to its l- or r-value
+/// arguments. This is analogous to `std::tie`.
+/// @param ...args Any number of arguments.
+/// @return A `tuple` of l- or r-value references.
 template <typename... Ts>
 [[nodiscard]] constexpr tuple<Ts &&...>
 forward_as_tuple(Ts &&...args) noexcept {

@@ -30,6 +30,7 @@ if (MSVC)
         tr/tuple_protocol/std_tuple.h
         tr/tuple_view.h
         tr/type_constant.h
+        tr/type_identity.h
         tr/unimplemented.h
         tr/value_constant.h
         tr/value_sequence.h)
