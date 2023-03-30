@@ -140,11 +140,4 @@ template <std::size_t N, typename Tuple>
     using res_idx_seq_t = decltype(detail::rotate_impl<N>(idx_seq_t{}));
     return tuple_view<Tuple, res_idx_seq_t>{std::forward<Tuple>(tuple)};
 }
-
-template <typename Tuple>
-[[nodiscard]] constexpr auto iota_for(Tuple &&) noexcept {
-    using tuple_t = detail::remove_cvref_t<Tuple>;
-    using idx_seq_t = typename tuple_view_traits<tuple_t>::idx_seq;
-    return idx_seq_t{};
-}
 } // namespace tr
