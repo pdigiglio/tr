@@ -15,7 +15,9 @@ if (MSVC)
         tr/detail/type_pack.h
         tr/detail/type_traits.h
         tr/detail/utility.h
+        tr/for_each.h
         tr/fwd/at.h
+        tr/fwd/for_each.h
         tr/fwd/indices_for.h
         tr/fwd/length.h
         tr/fwd/unimplemented.h

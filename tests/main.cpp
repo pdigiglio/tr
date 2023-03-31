@@ -13,6 +13,7 @@
 #include "tr/tuple_view.h"
 #include "tr/value_sequence.h"
 #include "tr/indices_for.h"
+#include "tr/for_each.h"
 
 #include <algorithm>
 #include <array>
@@ -230,12 +231,12 @@ int main() {
         tr::for_each(tr::indices_for(t),
                      [&t](auto i) { tr::at(t, i) = std::uint16_t{i}; });
 
-        // auto view0 = tr::drop_first<1>(t);
-        // auto view1 = tr::drop_first<1>(view0);
-        tr::for_each(tr::drop_first<10>(t), [](auto &elem) { elem = 0; });
-        tr::for_each(std::as_const(t),
-                     [](auto elem) { std::printf("%d ", elem); });
-        std::puts("");
+        //// auto view0 = tr::drop_first<1>(t);
+        //// auto view1 = tr::drop_first<1>(view0);
+        //tr::for_each(tr::drop_first<10>(t), [](auto &elem) { elem = 0; });
+        //tr::for_each(std::as_const(t),
+        //             [](auto elem) { std::printf("%d ", elem); });
+        //std::puts("");
 
         // foo<decltype(view)>();
     }

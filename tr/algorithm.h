@@ -9,14 +9,6 @@
 namespace tr {
 // https://www.foonathan.net/2020/05/fold-tricks/
 namespace detail {
-template <typename Tuple, typename UnaryFunc, std::size_t... Is>
-constexpr UnaryFunc for_each(Tuple &&tuple, UnaryFunc pred,
-                             std::index_sequence<Is...>) {
-    //using tr::get;
-    (pred(tr::get<Is>(std::forward<Tuple>(tuple))), ...);
-    return pred;
-}
-
 template <typename Tuple, typename Predicate, std::size_t... Is>
 constexpr bool any_of(Tuple &&tuple, Predicate pred,
                       std::index_sequence<Is...>) {
@@ -110,15 +102,6 @@ constexpr bool equal_pred<void>::operator()(T &&lhs, U &&rhs) const {
     }
 }
 } // namespace detail
-
-template <typename Tuple, typename UnaryFunc>
-constexpr UnaryFunc for_each(Tuple &&tuple, UnaryFunc unaryFunc) {
-    using tuple_t = std::remove_reference_t<Tuple>;
-    auto const tupleSize = tr::tup_size_v<tuple_t>;
-    detail::for_each(std::forward<Tuple>(tuple), unaryFunc,
-                     std::make_index_sequence<tupleSize>{});
-    return unaryFunc;
-}
 
 template <typename Tuple, typename Predicate>
 constexpr bool any_of(Tuple &&tuple, Predicate pred) {
