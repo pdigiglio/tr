@@ -14,6 +14,7 @@
 #include "tr/value_sequence.h"
 #include "tr/indices_for.h"
 #include "tr/for_each.h"
+#include "tr/unpack.h"
 
 #include <algorithm>
 #include <array>
@@ -164,6 +165,7 @@ int main() {
 
     constexpr std::pair p{"hello", 1};
     tr::for_each(p, [](auto i) { std::cout << '\'' << i << "'\n"; });
+    tr::unpack(p, [](auto...) {});
 
     {
         constexpr auto ok = tr::any_of(
@@ -233,12 +235,26 @@ int main() {
 
         // auto view0 = tr::drop_first<1>(t);
         // auto view1 = tr::drop_first<1>(view0);
-        tr::for_each(tr::drop_first<10>(t), [](auto &elem) { elem = 0; });
+
+        constexpr int elemsToDrop{11};
+        tr::for_each(tr::drop_first<elemsToDrop>(t), [](auto &elem) { elem = 0; });
         tr::for_each(std::as_const(t),
                      [](auto elem) { std::printf("%d ", elem); });
+
+        auto res = tr::unpack(t, [](auto... elems) { return (elems + ...); });
+        assert(res == (elemsToDrop * (elemsToDrop - 1)) / 2);
+
         std::puts("");
 
         // foo<decltype(view)>();
+    }
+
+    {
+        constexpr int upTo{10};
+        std::make_index_sequence<upTo> indices{};
+        auto res = tr::unpack(
+            indices, [](auto... elems) { return tr::value_c<(elems + ...)>; });
+        static_assert(res == (upTo * (upTo - 1)) / 2);
     }
 
     //{

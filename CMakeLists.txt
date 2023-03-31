@@ -21,6 +21,7 @@ if (MSVC)
         tr/fwd/indices_for.h
         tr/fwd/length.h
         tr/fwd/unimplemented.h
+        tr/fwd/unpack.h
         tr/indices_for.h
         tr/length.h
         tr/overloaded.h
@@ -34,6 +35,7 @@ if (MSVC)
         tr/type_constant.h
         tr/type_identity.h
         tr/unimplemented.h
+        tr/unpack.h
         tr/value_constant.h
         tr/value_sequence.h)
 
