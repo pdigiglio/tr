@@ -9,8 +9,10 @@
 #include "tr/detail/utility.h"
 #include "tr/overloaded.h"
 #include "tr/tuple.h"
+#include "tr/at.h"
 #include "tr/tuple_view.h"
 #include "tr/value_sequence.h"
+#include "tr/indices_for.h"
 
 #include <algorithm>
 #include <array>
@@ -222,10 +224,11 @@ int main() {
 
     {
         // tr::tuple t{ 0,0,0,0,0 };
-        std::int8_t t[128]{};
+        constexpr auto size = 128;
+        std::uint16_t t[size]{};
         // tr::for_each(tr::iota_for(t), [&t](auto i) { tr::get(t, i) = i; });
-        tr::for_each(tr::iota_for(t),
-                     [&t](auto i) { tr::get<i>(t) = std::int8_t{i}; });
+        tr::for_each(tr::indices_for(t),
+                     [&t](auto i) { tr::at(t, i) = std::uint16_t{i}; });
 
         // auto view0 = tr::drop_first<1>(t);
         // auto view1 = tr::drop_first<1>(view0);

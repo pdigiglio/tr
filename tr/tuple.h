@@ -1,7 +1,7 @@
 #pragma once
 
 #include "./fwd/at.h"
-#include "./fwd/iota_for.h"
+#include "./fwd/indices_for.h"
 #include "./fwd/length.h"
 
 #include "./detail/ebo.h"
@@ -336,7 +336,7 @@ struct length_impl<tuple<Ts...>> {
 };
 
 template <typename... Ts>
-struct iota_for_impl<tuple<Ts...>> {
+struct indices_for_impl<tuple<Ts...>> {
 
     template <typename Sized>
     [[nodiscard]] static constexpr auto apply(Sized &&) noexcept ->

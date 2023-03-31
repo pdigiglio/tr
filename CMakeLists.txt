@@ -16,10 +16,10 @@ if (MSVC)
         tr/detail/type_traits.h
         tr/detail/utility.h
         tr/fwd/at.h
-        tr/fwd/iota_for.h
+        tr/fwd/indices_for.h
         tr/fwd/length.h
         tr/fwd/unimplemented.h
-        tr/iota_for.h
+        tr/indices_for.h
         tr/length.h
         tr/overloaded.h
         tr/tuple.h
