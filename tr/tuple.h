@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./fwd/at.h"
+#include "./fwd/iota_for.h"
 #include "./fwd/length.h"
 
 #include "./detail/ebo.h"
@@ -196,6 +197,7 @@ struct tuple_swap_trait<
 template <typename... Ts, std::size_t... Is>
 struct tuple_base<type_pack<Ts...>, std::index_sequence<Is...>>
     : tup_elem<Ts, Is>... {
+    using index_sequence_t = std::index_sequence<Is...>;
     using tup_elem<Ts, Is>::operator[]...;
     using tup_elem<Ts, Is>::get_type...;
 
@@ -327,7 +329,18 @@ struct at_impl<tuple<Ts...>> {
 template <typename... Ts>
 struct length_impl<tuple<Ts...>> {
     template <typename Iterable>
-    static constexpr value_constant<sizeof...(Ts)> apply(Iterable &&) noexcept {
+    static constexpr auto apply(Iterable &&) noexcept
+        -> value_constant<sizeof...(Ts)> {
+        return {};
+    }
+};
+
+template <typename... Ts>
+struct iota_for_impl<tuple<Ts...>> {
+
+    template <typename Sized>
+    [[nodiscard]] static constexpr auto apply(Sized &&) noexcept ->
+        typename tuple<Ts...>::index_sequence_t {
         return {};
     }
 };
