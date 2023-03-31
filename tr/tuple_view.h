@@ -1,5 +1,8 @@
 #pragma once
 
+#include "fwd/at.h"
+#include "fwd/length.h"
+
 #include "./tuple_protocol.h"
 #include "./value_constant.h"
 
@@ -12,7 +15,40 @@ struct tuple_view;
 
 template <typename Tuple, std::size_t... Is>
 struct tuple_view<Tuple, std::index_sequence<Is...>> {
+  public:
+    friend at_impl<tuple_view>;
+    using index_sequence_t = std::index_sequence<Is...>;
+
+    template <typename Tuple_>
+    constexpr explicit tuple_view(Tuple_ &&tuple) noexcept(
+        std::is_nothrow_constructible_v<Tuple, Tuple_ &&>)
+        : tuple_(std::forward<Tuple_>(tuple)) {}
+
+  private:
     Tuple tuple_;
+};
+
+template <typename Tuple, std::size_t... Is>
+struct at_impl<tuple_view<Tuple, std::index_sequence<Is...>>> {
+
+    template <typename TupleView, typename Idx>
+    [[nodiscard]] static constexpr auto apply(TupleView &&tupleView,
+                                              Idx idx)-> decltype(auto)
+    {
+        using index_sequence_t = std::index_sequence<Is...>;
+        auto realIdx = at(index_sequence_t{}, idx);
+        return at(std::forward<TupleView>(tupleView).tuple_, realIdx);
+    }
+};
+
+template <typename Tuple, std::size_t... Is>
+struct length_impl<tuple_view<Tuple, std::index_sequence<Is...>>> {
+
+    template <typename TupleView>
+    [[nodiscard]] static constexpr auto apply(TupleView &&) noexcept
+        -> value_constant<sizeof...(Is)> {
+        return {};
+    }
 };
 
 template <typename Tuple, std::size_t... Is>
