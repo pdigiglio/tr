@@ -1,3 +1,5 @@
+#pragma once
+
 #include "./fwd/indices_for.h"
 
 #include "./detail/type_traits.h"
