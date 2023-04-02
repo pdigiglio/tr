@@ -26,6 +26,7 @@ if (MSVC)
         tr/fwd/unpack.h
         tr/fwd/view_interface.h
         tr/indices_for.h
+        tr/lazy_false.h
         tr/length.h
         tr/overloaded.h
         tr/tuple.h

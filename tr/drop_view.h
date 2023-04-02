@@ -3,6 +3,7 @@
 #include "./fwd/drop_view.h"
 
 #include "./at.h"
+#include "./lazy_false.h"
 #include "./length.h"
 #include "./tuple_view.h"
 
@@ -29,8 +30,8 @@ constexpr auto drop_indices_for(Tuple &&tuple) noexcept {
         return drop_indices_for_impl<DropCount>(index_sequence_t{});
 
     } else {
-        //static_assert(value_c<false>.value, "Dropping too many elements");
-    }
+        static_assert(lazy_false<Tuple>, "Dropping too many elements");
+    } 
 }
 
 template <typename Tuple, std::size_t DropCount>
