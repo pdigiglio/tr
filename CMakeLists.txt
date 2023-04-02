@@ -15,13 +15,16 @@ if (MSVC)
         tr/detail/type_pack.h
         tr/detail/type_traits.h
         tr/detail/utility.h
+        tr/drop_view.h
         tr/for_each.h
         tr/fwd/at.h
+        tr/fwd/drop_view.h
         tr/fwd/for_each.h
         tr/fwd/indices_for.h
         tr/fwd/length.h
         tr/fwd/unimplemented.h
         tr/fwd/unpack.h
+        tr/fwd/view_interface.h
         tr/indices_for.h
         tr/length.h
         tr/overloaded.h
@@ -37,7 +40,8 @@ if (MSVC)
         tr/unimplemented.h
         tr/unpack.h
         tr/value_constant.h
-        tr/value_sequence.h)
+        tr/value_sequence.h
+        tr/view_interface.h)
 
     source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TR_SOURCE_LIST})
     # [VS] Add target just to have a list of tr's header files.

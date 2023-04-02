@@ -1,4 +1,5 @@
 set(SOURCE_LIST
+    drop_view.cpp
     ebo.cpp
     overloaded.cpp
     std_integer_sequence.cpp

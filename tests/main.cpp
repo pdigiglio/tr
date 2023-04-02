@@ -15,6 +15,7 @@
 #include "tr/indices_for.h"
 #include "tr/for_each.h"
 #include "tr/unpack.h"
+#include "tr/drop_view.h"
 
 #include <algorithm>
 #include <array>
@@ -237,7 +238,7 @@ int main() {
         // auto view1 = tr::drop_first<1>(view0);
 
         constexpr int elemsToDrop{11};
-        tr::for_each(tr::drop_first<elemsToDrop>(t), [](auto &elem) { elem = 0; });
+        tr::for_each(t | tr::drop_c<elemsToDrop>, [](auto &elem) { elem = 0; });
         tr::for_each(std::as_const(t),
                      [](auto elem) { std::printf("%d ", elem); });
 

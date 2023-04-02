@@ -322,7 +322,8 @@ template <typename... Ts>
 struct at_impl<tuple<Ts...>> {
     template <typename Iterable, typename Idx>
     static constexpr decltype(auto) apply(Iterable &&tuple, Idx) noexcept {
-        return std::forward<Iterable>(tuple)[Idx{}];
+        using idx_t = std::integral_constant<std::size_t, Idx::value>;
+        return std::forward<Iterable>(tuple)[idx_t{}];
     }
 };
 
@@ -335,15 +336,15 @@ struct length_impl<tuple<Ts...>> {
     }
 };
 
-template <typename... Ts>
-struct indices_for_impl<tuple<Ts...>> {
-
-    template <typename Sized>
-    [[nodiscard]] static constexpr auto apply(Sized &&) noexcept ->
-        typename tuple<Ts...>::index_sequence_t {
-        return {};
-    }
-};
+//template <typename... Ts>
+//struct indices_for_impl<tuple<Ts...>> {
+//
+//    template <typename Sized>
+//    [[nodiscard]] static constexpr auto apply(Sized &&) noexcept ->
+//        typename tuple<Ts...>::index_sequence_t {
+//        return {};
+//    }
+//};
 
 } // namespace tr
 
