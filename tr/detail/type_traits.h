@@ -39,8 +39,8 @@ constexpr static bool is_complete_v{is_complete<T>::value};
 template <typename Callable>
 struct validity_checker {
     template <typename... Args>
-    constexpr auto operator()(Args...) const noexcept
-        -> std::is_invocable<Callable, Args...> {
+    constexpr auto operator()(Args&&...) const noexcept
+        -> std::is_invocable<Callable, Args&&...> {
         return {};
     }
 };
