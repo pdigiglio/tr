@@ -6,6 +6,7 @@ set(SOURCE_LIST
     std_integer_sequence.cpp
     tuple.cpp
     type_constant.cpp
+    value_constant.cpp
     value_sequence.cpp
     # --
     main.cpp)

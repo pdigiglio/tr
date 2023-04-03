@@ -239,8 +239,8 @@ int main() {
     {
         constexpr int upTo{10};
         std::make_index_sequence<upTo> indices{};
-        auto res = tr::unpack(
-            indices, [](auto... elems) { return tr::value_c<(elems + ...)>; });
+        auto res =
+            tr::unpack(indices, [](auto... elems) { return (elems + ...); });
         static_assert(res == (upTo * (upTo - 1)) / 2);
     }
 
