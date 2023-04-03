@@ -175,20 +175,6 @@ int main() {
     }
 
     {
-        // constexpr auto ok = tr::all_of(p, [](auto i) { return
-        // tr::detail::is_complete_v<decltype(i)>; });
-        auto isComplete = [](auto *i) constexpr {
-            using tr::detail::is_complete_v;
-            return is_complete_v<decltype(*i)>;
-        };
-
-        struct incomplete;
-        constexpr incomplete *vals[10]{};
-        constexpr auto ok = tr::all_of(vals, isComplete);
-        static_assert(!ok);
-    }
-
-    {
         constexpr auto ok = tr::none_of(
             p, [](auto i) { return !tr::detail::is_complete_v<decltype(i)>; });
         static_assert(ok);

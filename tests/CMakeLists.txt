@@ -1,4 +1,5 @@
 set(SOURCE_LIST
+    all_of.cpp
     drop_view.cpp
     ebo.cpp
     overloaded.cpp

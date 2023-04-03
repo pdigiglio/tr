@@ -9,6 +9,7 @@ target_compile_features(tr INTERFACE cxx_std_17)
 if (MSVC)
     set(TR_SOURCE_LIST
         tr/algorithm.h
+        tr/all_of.h
         tr/at.h
         tr/combinator.h
         tr/detail/ebo.h
@@ -17,6 +18,7 @@ if (MSVC)
         tr/detail/utility.h
         tr/drop_view.h
         tr/for_each.h
+        tr/fwd/all_of.h
         tr/fwd/at.h
         tr/fwd/drop_view.h
         tr/fwd/for_each.h

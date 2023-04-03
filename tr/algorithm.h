@@ -17,13 +17,6 @@ constexpr bool any_of(Tuple &&tuple, Predicate pred,
 }
 
 template <typename Tuple, typename Predicate, std::size_t... Is>
-constexpr bool all_of(Tuple &&tuple, Predicate pred,
-                      std::index_sequence<Is...>) {
-    using tr::get;
-    return (pred(get<Is>(std::forward<Tuple>(tuple))) && ...);
-}
-
-template <typename Tuple, typename Predicate, std::size_t... Is>
 constexpr std::ptrdiff_t count_if(Tuple &&tuple, Predicate pred,
                                   std::index_sequence<Is...>) {
     using tr::get;
@@ -108,14 +101,6 @@ constexpr bool any_of(Tuple &&tuple, Predicate pred) {
     using tuple_t = std::remove_reference_t<Tuple>;
     auto const tupleSize = tr::tup_size_v<tuple_t>;
     return detail::any_of(std::forward<Tuple>(tuple), pred,
-                          std::make_index_sequence<tupleSize>{});
-}
-
-template <typename Tuple, typename Predicate>
-constexpr bool all_of(Tuple &&tuple, Predicate pred) {
-    using tuple_t = std::remove_reference_t<Tuple>;
-    auto const tupleSize = tr::tup_size_v<tuple_t>;
-    return detail::all_of(std::forward<Tuple>(tuple), pred,
                           std::make_index_sequence<tupleSize>{});
 }
 
