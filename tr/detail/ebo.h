@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../forward_as_base.h"
+
 #include "./type_traits.h"
 #include "./utility.h"
 
@@ -43,7 +45,7 @@ constexpr decltype(auto) get_ebo_val(Ebo &&e) noexcept {
 
     if constexpr (ebo_traits_t::is_compressed) {
         using ebo_value_t = typename ebo_traits_t::type;
-        return forward_as<ebo_value_t, Ebo>(e);
+        return forward_as_base<ebo_value_t, Ebo>(e);
     } else {
         return (std::forward<Ebo>(e).Val_);
         //     ^ parenthesis preserve value category in the return type.

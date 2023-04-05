@@ -18,6 +18,7 @@ if (MSVC)
         tr/detail/utility.h
         tr/drop_view.h
         tr/for_each.h
+        tr/forward_as_base.h
         tr/fwd/all_of.h
         tr/fwd/at.h
         tr/fwd/drop_view.h

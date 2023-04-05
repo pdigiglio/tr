@@ -172,7 +172,7 @@ struct tup_elem : tup_elem_base<T, I> {
     constexpr static decltype(auto)
     subscript_impl(TupElem &&tupElem, std::integral_constant<Int, I>) noexcept {
         using ebo_t = ebo<T, tuple_tag<I>>;
-        return get_ebo_val(forward_as<ebo_t, TupElem>(tupElem));
+        return get_ebo_val(forward_as_base<ebo_t, TupElem>(tupElem));
     }
 };
 

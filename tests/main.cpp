@@ -4,26 +4,26 @@
 #include "tr/tuple_protocol/std_tuple.h"
 
 #include "tr/algorithm.h"
+#include "tr/at.h"
 #include "tr/combinator.h"
 #include "tr/detail/ebo.h"
 #include "tr/detail/utility.h"
+#include "tr/drop_view.h"
+#include "tr/for_each.h"
+#include "tr/indices_for.h"
 #include "tr/overloaded.h"
 #include "tr/tuple.h"
-#include "tr/at.h"
 #include "tr/tuple_view.h"
-#include "tr/value_sequence.h"
-#include "tr/indices_for.h"
-#include "tr/for_each.h"
 #include "tr/unpack.h"
-#include "tr/drop_view.h"
+#include "tr/value_sequence.h"
 
 #include <algorithm>
 #include <array>
-#include <numeric>
 #include <cassert>
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -42,31 +42,6 @@
 namespace {
 template <typename...>
 void foo();
-
-struct TestFw {
-    void test_fw() {
-        using tr::detail::forward_as;
-
-        struct Base {};
-        struct Derived : Base {};
-
-        Derived d;
-        static_assert(
-            std::is_same_v<decltype(forward_as<Base, Derived &>(d)), Base &>);
-        static_assert(std::is_same_v<decltype(forward_as<Base, Derived const &>(
-                                         std::as_const(d))),
-                                     Base const &>);
-
-        static_assert(
-            std::is_same_v<decltype(forward_as<Base, Derived &&>(std::move(d))),
-                           Base &&>);
-        static_assert(
-            std::is_same_v<decltype(forward_as<Base, Derived const &&>(
-                               std::move(std::as_const(d)))),
-                           Base const &&>);
-    }
-};
-
 
 // Check that class tr::combinator behaves like I expect.
 struct TestCombinator {
@@ -128,7 +103,6 @@ struct TestCombinator {
         }
     }
 };
-
 
 template <std::size_t N, std::size_t... Is>
 auto array_indexing() {

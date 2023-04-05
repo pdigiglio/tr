@@ -41,7 +41,7 @@ struct compressed_op : ebo<BinaryOp, combinator_tag<0>> {
     static constexpr decltype(auto)
     get_operator_impl(CompOp &&compOp) noexcept {
         using ebo_t = ebo<BinaryOp, combinator_tag<0>>;
-        return get_ebo_val(forward_as<ebo_t, CompOp>(compOp));
+        return get_ebo_val(forward_as_base<ebo_t, CompOp>(compOp));
     }
 };
 } // namespace detail
@@ -65,8 +65,7 @@ struct combinator : detail::compressed_op<BinaryOp>,
     template <typename Comb>
     constexpr static decltype(auto) get_val(Comb &&comb) noexcept {
         using ebo_t = detail::ebo<ValT, detail::combinator_tag<1>>;
-        using detail::forward_as;
-        return get_ebo_val(forward_as<ebo_t, Comb>(comb));
+        return get_ebo_val(forward_as_base<ebo_t, Comb>(comb));
     }
 
   public:
