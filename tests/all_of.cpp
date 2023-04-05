@@ -6,22 +6,40 @@
 #include <tr/length.h>
 // --
 
+#include <tr/tuple.h>
 #include <tr/value_constant.h>
 
+using tr::all_of;
+using tr::as_array;
+using tr::tuple;
 using tr::value_c;
 using tr::detail::is_complete_v;
 
 namespace {
+
+struct incomplete;
+struct complete {};
+
 struct TestAllOf {
     void test() {
-        auto isPtrToComplete = [](auto *i) constexpr {
-            return value_c<is_complete_v<decltype(*i)>>;
+        auto isIncomplete = [](auto *i) constexpr {
+            return value_c<!is_complete_v<decltype(*i)>>;
         };
 
-        struct incomplete;
-        incomplete *vals[10]{};
-        auto ok = tr::all_of(vals, isPtrToComplete);
-        static_assert(!ok);
+        {
+            incomplete *incompletes[2]{};
+            auto allIncomplete = all_of(incompletes, isIncomplete);
+            static_assert(allIncomplete);
+        }
+
+        {
+            tuple<incomplete *, complete *> someIncomplete{};
+            auto allIncomplete = all_of(someIncomplete, isIncomplete);
+            static_assert(!allIncomplete);
+        }
+
+        static_assert(all_of(tuple{}, [] { /*unevaluated*/ }),
+                      "tr::all_of is not true on an empty tuple");
     }
 };
 } // namespace
