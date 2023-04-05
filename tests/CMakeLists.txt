@@ -24,3 +24,24 @@ else()
         target_compile_options(tests PRIVATE -Wno-missing-braces)
     endif()
 endif()
+
+
+## TODO: The following options don't seem to work (at least, on MinTTY). I
+## should test them on a real linux machine:
+##   --mapping_file
+##   --comment_style
+##
+
+#find_program(IWYU_PATH NAMES include-what-you-use iwyu REQUIRED)
+#if (IWYU_PATH)
+#    set(IWYU_PATH_AND_OPTS
+#        ${IWYU_PATH}
+#        -Xiwyu
+#        --cxx17ns
+#        --mapping_file=${CMAKE_CURRENT_SOURCE_DIR}/iwyu_mappings.imp
+#        --comment_style=long)
+#
+#    set_property(
+#        TARGET tests
+#        PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PATH_AND_OPTS})
+#endif()

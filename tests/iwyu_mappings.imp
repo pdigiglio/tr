@@ -1,0 +1,8 @@
+# vim: set ft=json:
+
+[
+    { "include": [ "<__type_traits/enable_if.h>", "private", "<type_traits>", "public" ] },
+    { "include": [ "<__utility/forward.h>"         , "private", "<utility>", "public" ] },
+    { "include": [ "<__utility/integer_sequence.h>", "private", "<utility>", "public" ] }
+]
+
