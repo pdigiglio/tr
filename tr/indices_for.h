@@ -17,7 +17,7 @@ struct indices_for_impl<T,
     template <typename Sized>
     [[nodiscard]] static constexpr auto apply(Sized &&sized) noexcept {
         auto size = tr::length(sized);
-        return std::make_index_sequence<size>{};
+        return std::make_index_sequence<decltype(size)::value>{};
     }
 };
 

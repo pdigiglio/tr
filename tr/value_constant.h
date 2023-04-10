@@ -1,5 +1,7 @@
 #pragma once
 
+#include "./fwd/value_constant.h"
+
 #include <cstddef>
 #include <type_traits>
 
@@ -20,22 +22,15 @@ template <template <auto...> typename ValueExpr, auto... Vals>
 static constexpr bool is_valid_value_expr_v{
     detail::is_valid_value_expr<ValueExpr, void, Vals...>::value};
 
-
-template <auto Val>
-struct value_constant {
-    using type = decltype(Val);
-    static constexpr type value{Val};
-
-    /// @brief Implicit cast to the wrapped value.
-    /// @return The wrapped value.
-    [[nodiscard]] constexpr operator type() const noexcept { return Val; }
+template <typename T, T Val>
+struct integral_constant : std::integral_constant<T, Val> {
 
     /// @brief Explicit cast to the wrapped value.
-    /// @tparam T The type to cast to (it's different from the wrapped value type).
+    /// @tparam U The type to cast to (different from the wrapped value type).
     /// @return The wrapped value.
-    template <typename T, typename = std::enable_if_t<!std::is_same_v<T, type>>>
-    [[nodiscard]] constexpr explicit operator T() const noexcept {
-        return T{Val};
+    template <typename U, typename = std::enable_if_t<!std::is_same_v<U, T>>>
+    [[nodiscard]] constexpr explicit operator U() const noexcept {
+        return U{Val};
         //     ^ prevent narrowing conversions (on explicit casts).
     }
 
@@ -45,16 +40,17 @@ struct value_constant {
     using EXPR_TYPE_NAME = value_constant<(Val OP Val_)>;                      \
                                                                                \
   public:                                                                      \
-    template <auto Val_>                                                       \
+    template <typename T_, T_ Val_>                                            \
     [[nodiscard]] friend constexpr auto operator OP(                           \
-        value_constant, value_constant<Val_>) noexcept->EXPR_TYPE_NAME<Val_> { \
+        integral_constant,                                                     \
+        integral_constant<T_, Val_>) noexcept->EXPR_TYPE_NAME<Val_> {          \
         return {};                                                             \
     }                                                                          \
                                                                                \
-    template <auto Val_>                                                       \
-    friend auto operator OP(value_constant, value_constant<Val_>)              \
+    template <typename T_, T_ Val_>                                            \
+    friend auto operator OP(integral_constant, integral_constant<T_, Val_>)    \
         ->std::enable_if_t<!is_valid_value_expr_v<EXPR_TYPE_NAME, Val_>> =     \
-        delete; \
+        delete;
 
     // Comparators
     DEFINE_INFIX_BINARY_OPERATOR(==, equal_expr_t)
@@ -88,7 +84,6 @@ struct value_constant {
     DEFINE_INFIX_BINARY_OPERATOR(>>, right_shift_expr_t)
 
 #undef DEFINE_INFIX_BINARY_OPERATOR
-
 };
 
 #define DEFINE_PREFIX_UNARY_OPERATOR(OP, EXPR_TYPE_NAME)                       \
@@ -97,14 +92,14 @@ struct value_constant {
     using EXPR_TYPE_NAME = value_constant<(OP Val)>;                           \
     }                                                                          \
                                                                                \
-    template <auto Val>                                                        \
+    template <typename T, T Val>                                               \
     [[nodiscard]] constexpr auto operator OP(                                  \
-        value_constant<Val>) noexcept->detail::EXPR_TYPE_NAME<Val> {           \
+        integral_constant<T, Val>) noexcept->detail::EXPR_TYPE_NAME<Val> {     \
         return {};                                                             \
     }                                                                          \
                                                                                \
-    template <auto Val>                                                        \
-    auto operator OP(value_constant<Val>)                                      \
+    template <typename T, T Val>                                               \
+    auto operator OP(integral_constant<T, Val>)                                \
         ->std::enable_if_t<                                                    \
             !is_valid_value_expr_v<detail::EXPR_TYPE_NAME, Val>> = delete;
 

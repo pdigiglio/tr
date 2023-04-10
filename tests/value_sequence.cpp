@@ -33,13 +33,13 @@ struct TestValueSequence {
             static_assert(tup[ic<2>] == 2u);
 
             auto [t0, t1, t2] = tup;
-            static_assert(type_c<decltype(t0)::type> == type_c<char>);
+            static_assert(type_c<decltype(t0)::value_type> == type_c<char>);
             static_assert(decltype(t0){} == '0');
 
-            static_assert(type_c<decltype(t1)::type> == type_c<long>);
+            static_assert(type_c<decltype(t1)::value_type> == type_c<long>);
             static_assert(decltype(t1){} == 1);
 
-            static_assert(type_c<decltype(t2)::type> == type_c<unsigned>);
+            static_assert(type_c<decltype(t2)::value_type> == type_c<unsigned>);
             static_assert(decltype(t2){} == 2);
         }
     }

@@ -28,6 +28,7 @@ if (MSVC)
         tr/fwd/reverse_view.h
         tr/fwd/unimplemented.h
         tr/fwd/unpack.h
+        tr/fwd/value_constant.h
         tr/fwd/view_interface.h
         tr/indices_for.h
         tr/lazy_false.h

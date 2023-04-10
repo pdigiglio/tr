@@ -85,7 +85,7 @@ struct TestValueConstant {
         // Arithmetic
         static_assert(a + b == 9);
         static_assert(a - b == UINT_MAX);
-        static_assert(type_c<decltype(a - b)::type> == type_c<unsigned>);
+        static_assert(type_c<decltype(a - b)::value_type> == type_c<unsigned>);
         static_assert(a * b == 20);
         static_assert(a / b == 0);
         static_assert(a % b == a);
