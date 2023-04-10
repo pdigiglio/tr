@@ -4,6 +4,7 @@ set(SOURCE_LIST
     ebo.cpp
     forward_as_base.cpp
     overloaded.cpp
+    reverse_view.cpp
     std_integer_sequence.cpp
     tuple.cpp
     type_constant.cpp

@@ -25,6 +25,7 @@ if (MSVC)
         tr/fwd/for_each.h
         tr/fwd/indices_for.h
         tr/fwd/length.h
+        tr/fwd/reverse_view.h
         tr/fwd/unimplemented.h
         tr/fwd/unpack.h
         tr/fwd/view_interface.h
@@ -32,6 +33,7 @@ if (MSVC)
         tr/lazy_false.h
         tr/length.h
         tr/overloaded.h
+        tr/reverse_view.h
         tr/tuple.h
         tr/tuple_protocol.h
         tr/tuple_protocol/built_in_array.h
