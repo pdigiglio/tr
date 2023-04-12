@@ -37,8 +37,7 @@ template <typename T, std::size_t N, std::size_t I>
 struct tup_elem_base<T[N], I> : ebo<T[N], tuple_tag<I>> {
 
     /// @brief Default constructor.
-    constexpr tup_elem_base() noexcept : ebo<T[N], tuple_tag<I>>{} {}
-    //constexpr tup_elem_base() noexcept = default;
+    constexpr tup_elem_base() noexcept = default;
 
     /// @brief Construct from a l-value reference to a constant array.
     /// @param arr The array to contruct from.

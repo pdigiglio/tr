@@ -245,7 +245,7 @@ struct TestTuple {
     void test_trivial_destructibility() {
         struct empty {};
         static_assert(
-            !std::is_trivially_constructible_v<tr::tuple<int[4], char, empty>>);
+            std::is_trivially_constructible_v<tr::tuple<int[4], char, empty>>);
         static_assert(
             std::is_trivially_destructible_v<tr::tuple<int[4], char, empty>>);
 
