@@ -6,6 +6,7 @@
 #include <tr/length.h>
 // --
 
+#include <tr/as_array.h>
 #include <tr/tuple.h>
 #include <tr/value_constant.h>
 

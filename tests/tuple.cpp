@@ -1,5 +1,6 @@
 #include <tr/tuple.h>
 
+#include <tr/as_array.h>
 #include <tr/at.h>
 #include <tr/length.h>
 #include <tr/type_constant.h>

@@ -15,8 +15,6 @@
 #include <utility>
 
 namespace tr {
-template <typename T>
-using as_array = std::enable_if_t<std::is_array_v<T>, T>;
 
 namespace detail {
 

@@ -10,6 +10,7 @@ if (MSVC)
     set(TR_SOURCE_LIST
         tr/algorithm.h
         tr/all_of.h
+        tr/as_array.h
         tr/at.h
         tr/combinator.h
         tr/detail/ebo.h
