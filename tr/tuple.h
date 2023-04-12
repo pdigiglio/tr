@@ -5,6 +5,7 @@
 #include "./fwd/length.h"
 
 #include "./detail/ebo.h"
+#include "./detail/flat_array.h"
 #include "./detail/type_pack.h"
 #include "./detail/type_traits.h"
 #include "./tuple_protocol.h"
@@ -29,67 +30,27 @@ struct tuple_tag;
 template <typename T, std::size_t I>
 struct tup_elem_base : ebo<T, tuple_tag<I>> {};
 
-template <typename T, std::size_t N, std::size_t... Is>
-[[nodiscard]] constexpr auto
-flat_array_extent_impl(T const (&)[N], std::index_sequence<Is...>) noexcept {
-    return std::integral_constant<std::size_t,
-                                  (std::extent_v<T[N], Is> * ...)>{};
-}
-
-template <typename T, std::size_t N>
-[[nodiscard]] constexpr auto flat_array_extent(T const (&arr)[N]) noexcept {
-    constexpr auto rank = std::rank_v<T[N]>;
-    return flat_array_extent_impl(arr, std::make_index_sequence<rank>{});
-}
-
-template <typename T, std::size_t N>
-[[nodiscard]] constexpr auto
-flat_sequence_for_array(T const (&arr)[N]) noexcept {
-    auto flatExtent = flat_array_extent(arr);
-    return std::make_index_sequence<flatExtent>{};
-}
-
-template <std::size_t I, typename Arr>
-[[nodiscard]] constexpr decltype(auto) flat_array_at_impl(Arr &&arr) noexcept {
-    using array_t = remove_cvref_t<Arr>;
-    static_assert(
-        std::is_array_v<array_t>,
-        "Arr is not an array, nor a cv-ref qualified reference to one");
-
-    constexpr auto extent = std::extent_v<array_t>;
-    constexpr auto rank = std::rank_v<array_t>;
-    if constexpr (rank == 1) {
-        static_assert(I < extent, "Index out of bounds");
-        return forward_like<Arr>(arr[I]);
-    } else {
-        using elem_extent_t = decltype(flat_array_extent(arr[0]));
-        constexpr auto row = I / elem_extent_t::value;
-        constexpr auto rest = I % elem_extent_t::value;
-
-        static_assert(row < extent, "Index out of bounds");
-        return flat_array_at_impl<rest>(arr[row]);
-    }
-}
-
-template <std::size_t I, typename T, std::size_t N>
-[[nodiscard]] constexpr decltype(auto)
-flat_array_at(T const (&arr)[N]) noexcept {
-    return flat_array_at_impl<I>(arr);
-}
-
-template <std::size_t I, typename T, std::size_t N>
-[[nodiscard]] constexpr decltype(auto) flat_array_at(T(&&arr)[N]) noexcept {
-    return flat_array_at_impl<I>(std::move(arr));
-}
-
+/// @brief An empty-base-optimized class that adds special behavior to `ebo`
+/// when the wrapped type is a built-in array.
+/// @tparam T The array value type.
+/// @tparam B The array size.
+/// @tparam I An index type.
 template <typename T, std::size_t N, std::size_t I>
 struct tup_elem_base<T[N], I> : ebo<T[N], tuple_tag<I>> {
+
+    /// @brief Default construct.
     constexpr tup_elem_base() noexcept : ebo<T[N], tuple_tag<I>>{} {}
 
+    /// @brief Construct from a l-value reference to a constant array.
+    /// @param arr The array to contruct from.
+    /// @tparam M The size of the input array (may be less or equal than `N`).
     template <std::size_t M>
     constexpr tup_elem_base(T const (&arr)[M])
         : tup_elem_base(arr, flat_sequence_for_array(arr)) {}
 
+    /// @brief Construct from a r-value reference to an array.
+    /// @param arr The array to contruct from.
+    /// @tparam M The size of the input array (may be less or equal than `N`).
     template <std::size_t M>
     constexpr tup_elem_base(T(&&arr)[M])
         : tup_elem_base(std::move(arr), flat_sequence_for_array(arr)) {}
