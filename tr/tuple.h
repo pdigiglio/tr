@@ -3,13 +3,15 @@
 #include "./fwd/at.h"
 #include "./fwd/indices_for.h"
 #include "./fwd/length.h"
+#include "./fwd/tuple.h"
 
 #include "./detail/ebo.h"
 #include "./detail/flat_array.h"
-#include "./detail/type_pack.h"
+#include "./detail/tuple_traits_utils.h"
 #include "./detail/type_traits.h"
 #include "./tuple_protocol.h"
 #include "./type_identity.h"
+#include "./type_pack.h"
 
 #include <cstddef>
 #include <type_traits>
@@ -18,10 +20,6 @@
 namespace tr {
 
 namespace detail {
-
-/// @brief Tag type for tuple elements.
-template <std::size_t>
-struct tuple_tag;
 
 /// @brief An empty-base-optimized class that adds special behavior to `ebo`
 /// when the wrapped type is a built-in array.
@@ -38,8 +36,9 @@ struct tup_elem_base : ebo<T, tuple_tag<I>> {};
 template <typename T, std::size_t N, std::size_t I>
 struct tup_elem_base<T[N], I> : ebo<T[N], tuple_tag<I>> {
 
-    /// @brief Default construct.
+    /// @brief Default constructor.
     constexpr tup_elem_base() noexcept : ebo<T[N], tuple_tag<I>>{} {}
+    //constexpr tup_elem_base() noexcept = default;
 
     /// @brief Construct from a l-value reference to a constant array.
     /// @param arr The array to contruct from.
@@ -60,23 +59,6 @@ struct tup_elem_base<T[N], I> : ebo<T[N], tuple_tag<I>> {
     constexpr tup_elem_base(Arr &&arr, std::index_sequence<Is...>)
         : ebo<T[N], tuple_tag<I>>{
               flat_array_at<Is>(std::forward<Arr>(arr))...} {}
-};
-
-template <typename T, std::size_t I>
-struct tup_elem;
-
-template <typename, typename>
-struct tuple_swap_trait;
-
-template <typename T, typename U, std::size_t I>
-struct tuple_swap_trait<tup_elem<T, I>, tup_elem<U, I>> {
-    static constexpr bool swappable{
-        std::is_swappable_with_v<std::add_lvalue_reference_t<T>,
-                                 std::add_lvalue_reference_t<U>>};
-
-    static constexpr bool nothrow_swappable{
-        std::is_nothrow_swappable_with_v<std::add_lvalue_reference_t<T>,
-                                         std::add_lvalue_reference_t<U>>};
 };
 
 template <typename T, std::size_t I>
@@ -109,9 +91,8 @@ struct tup_elem : tup_elem_base<T, I> {
     /// @param rhs The right-hand side instance.
     template <typename U>
     constexpr auto swap(tup_elem<U, I> &rhs) noexcept(
-        tuple_swap_trait<tup_elem, tup_elem<U, I>>::nothrow_swappable)
-        -> std::enable_if_t<
-            tuple_swap_trait<tup_elem, tup_elem<U, I>>::swappable> {
+        are_tuples_nothrow_swappable_v<tup_elem, tup_elem<U, I>>)
+        -> std::enable_if_t<are_tuples_swappable_v<tup_elem, tup_elem<U, I>>> {
         using std::swap;
         swap((*this)[zuic<I>], rhs[zuic<I>]);
     }
@@ -135,43 +116,22 @@ struct tup_elem : tup_elem_base<T, I> {
     }
 };
 
-template <typename TL, typename IL>
-struct tuple_base;
-
-template <typename... Ts, typename... Us, std::size_t... Is>
-struct tuple_swap_trait<
-    tuple_base<type_pack<Ts...>, std::index_sequence<Is...>>,
-    tuple_base<type_pack<Us...>, std::index_sequence<Is...>>> {
-
-    static constexpr bool swappable{
-        (tuple_swap_trait<tup_elem<Ts, Is>, tup_elem<Us, Is>>::swappable &&
-         ... && true)};
-
-    static constexpr bool nothrow_swappable{
-        (tuple_swap_trait<tup_elem<Ts, Is>,
-                          tup_elem<Us, Is>>::nothrow_swappable &&
-         ... && true)};
-};
-
 template <typename... Ts, std::size_t... Is>
 struct tuple_base<type_pack<Ts...>, std::index_sequence<Is...>>
     : tup_elem<Ts, Is>... {
     using index_sequence_t = std::index_sequence<Is...>;
+    using type_pack_t = type_pack<Ts...>;
+
     using tup_elem<Ts, Is>::operator[]...;
     using tup_elem<Ts, Is>::get_type...;
 
     template <typename... Us>
     constexpr auto
-    swap(tuple_base<type_pack<Us...>, std::index_sequence<Is...>>
-             &rhs) noexcept(tuple_swap_trait<tuple_base,
-                                             tuple_base<
-                                                 type_pack<Us...>,
-                                                 std::index_sequence<Is...>>>::
-                                nothrow_swappable)
-
-        -> std::enable_if_t<tuple_swap_trait<
-            tuple_base, tuple_base<type_pack<Us...>,
-                                   std::index_sequence<Is...>>>::swappable> {
+    swap(tuple_base<type_pack<Us...>, index_sequence_t> &rhs) noexcept(
+        are_tuples_nothrow_swappable_v<
+            tuple_base, tuple_base<type_pack<Us...>, index_sequence_t>>)
+        -> std::enable_if_t<are_tuples_swappable_v<
+            tuple_base, tuple_base<type_pack<Us...>, index_sequence_t>>> {
         (
             [&] {
                 using lhs_t = tup_elem<Ts, Is>;
@@ -184,8 +144,8 @@ struct tuple_base<type_pack<Ts...>, std::index_sequence<Is...>>
 } // namespace detail
 
 template <typename... Ts>
-struct tuple : detail::tuple_base<detail::type_pack<Ts...>,
-                                  std::index_sequence_for<Ts...>> {};
+struct tuple
+    : detail::tuple_base<type_pack<Ts...>, std::index_sequence_for<Ts...>> {};
 
 template <typename... Ts>
 tuple(Ts const &...) -> tuple<Ts...>;
@@ -193,11 +153,11 @@ tuple(Ts const &...) -> tuple<Ts...>;
 /// @brief Swap two tuples.
 /// @param lhs The left-hand-side tuple.
 /// @param rhs The right-hand-side tuple.
-template <typename T, typename... Ts, typename U, typename... Us,
-          typename = std::enable_if_t<((type_c<T> != type_c<U>) || ... ||
-                                       (type_c<Ts> != type_c<Us>))>>
-constexpr auto swap(tuple<T, Ts...> &lhs, tuple<U, Us...> &rhs)
-    -> decltype(lhs.swap(rhs)) {
+template <typename T, typename... Ts, typename U, typename... Us>
+constexpr auto swap(tuple<T, Ts...> &lhs,
+                    tuple<U, Us...> &rhs) noexcept(noexcept(lhs.swap(rhs)))
+    -> std::enable_if_t<type_pack_c<T, Ts...> != type_pack_c<U, Us...>,
+                        decltype(lhs.swap(rhs))> {
     lhs.swap(rhs);
 }
 
@@ -207,13 +167,7 @@ constexpr auto swap(tuple<T, Ts...> &lhs, tuple<U, Us...> &rhs)
 template <typename... Ts>
 constexpr auto swap(tuple<Ts...> &lhs,
                     tuple<Ts...> &rhs) noexcept(noexcept(lhs.swap(rhs)))
-    -> std::enable_if_t<
-        detail::tuple_swap_trait<
-            detail::tuple_base<detail::type_pack<Ts...>,
-                               std::index_sequence_for<Ts...>>,
-            detail::tuple_base<detail::type_pack<Ts...>,
-                               std::index_sequence_for<Ts...>>>::swappable,
-        decltype(lhs.swap(rhs))> {
+    -> std::enable_if_t<detail::is_tuple_swappable_v<tuple<Ts...>>> {
     lhs.swap(rhs);
 }
 
@@ -221,12 +175,7 @@ constexpr auto swap(tuple<Ts...> &lhs,
 /// swappable if any of its contained element is not.
 template <typename... Ts>
 auto swap(tuple<Ts...> &, tuple<Ts...> &)
-    -> std::enable_if_t<!detail::tuple_swap_trait<
-        detail::tuple_base<detail::type_pack<Ts...>,
-                           std::index_sequence_for<Ts...>>,
-        detail::tuple_base<detail::type_pack<Ts...>,
-                           std::index_sequence_for<Ts...>>>::swappable> =
-    delete;
+    -> std::enable_if_t<!detail::is_tuple_swappable_v<tuple<Ts...>>> = delete;
 
 /// @brief Creates a `tuple` of l-value references to its arguments. This is
 /// analogous to `std::tie`.

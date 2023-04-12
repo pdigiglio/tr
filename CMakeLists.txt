@@ -15,7 +15,7 @@ if (MSVC)
         tr/combinator.h
         tr/detail/ebo.h
         tr/detail/flat_array.h
-        tr/detail/type_pack.h
+        tr/detail/tuple_traits_utils.h
         tr/detail/type_traits.h
         tr/detail/utility.h
         tr/drop_view.h
@@ -28,6 +28,8 @@ if (MSVC)
         tr/fwd/indices_for.h
         tr/fwd/length.h
         tr/fwd/reverse_view.h
+        tr/fwd/tuple.h
+        tr/fwd/type_pack.h
         tr/fwd/unimplemented.h
         tr/fwd/unpack.h
         tr/fwd/value_constant.h
@@ -46,6 +48,7 @@ if (MSVC)
         tr/tuple_view.h
         tr/type_constant.h
         tr/type_identity.h
+        tr/type_pack.h
         tr/unimplemented.h
         tr/unpack.h
         tr/value_constant.h
