@@ -12,10 +12,10 @@ namespace tr {
 /// 
 /// @code
 /// // Create a temporary int[3]{0,1,2}
-/// as_array<T[]>{0,1,2};
+/// as_array<int[]>{0,1,2};
 /// 
 /// // Create a temporary int[5]{0,1,2,0,0}
-/// as_array<T[5]>{0,1,2};
+/// as_array<int[5]>{0,1,2};
 /// @endcode
 /// 
 /// See also:  https://en.cppreference.com/w/cpp/language/array#Array_rvalues
