@@ -26,6 +26,7 @@ if (MSVC)
         tr/fwd/drop_view.h
         tr/fwd/for_each.h
         tr/fwd/indices_for.h
+        tr/fwd/is_valid.h
         tr/fwd/length.h
         tr/fwd/reverse_view.h
         tr/fwd/tuple.h
@@ -35,6 +36,7 @@ if (MSVC)
         tr/fwd/value_constant.h
         tr/fwd/view_interface.h
         tr/indices_for.h
+        tr/is_valid.h
         tr/lazy_false.h
         tr/length.h
         tr/overloaded.h

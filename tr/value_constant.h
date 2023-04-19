@@ -1,26 +1,12 @@
 #pragma once
 
 #include "./fwd/value_constant.h"
+#include "./is_valid.h"
 
 #include <cstddef>
 #include <type_traits>
 
 namespace tr {
-
-namespace detail {
-
-template <template <auto...> typename, typename, auto...>
-struct is_valid_value_expr : std::false_type {};
-
-template <template <auto...> typename ValueExpr, auto... Vals>
-struct is_valid_value_expr<ValueExpr, std::void_t<ValueExpr<Vals...>>, Vals...>
-    : std::true_type {};
-
-} // namespace detail
-
-template <template <auto...> typename ValueExpr, auto... Vals>
-static constexpr bool is_valid_value_expr_v{
-    detail::is_valid_value_expr<ValueExpr, void, Vals...>::value};
 
 template <typename T, T Val>
 struct integral_constant : std::integral_constant<T, Val> {
