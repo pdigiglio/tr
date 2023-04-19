@@ -24,13 +24,15 @@ struct CallableWrapper<R (*)(Args...)> {
 /// @details The call-operator overload set is the union of the overload sets in
 /// each of the `Callables...`, e.g.:
 /// 
-/// ```
+/// @code
+/// int f(int);
+/// 
 /// // o0 has two call-operator overloads (i.e. for int, double)
-/// overloaded o0 {[](int) { ... }, [](double) { ... }};
+/// overloaded o0 {f, [](double) { /* ... */ }};
 /// 
 /// // o1 has three call-operator overloads (i.e. for int, double, char const*)
-/// overloaded o1 {o0, [](char const*) { ... }};
-/// ```
+/// overloaded o1 {o0, [](char const*) { /* ... */ }};
+/// @endcode
 ///
 /// @tparam ...Callables The callable types.
 template <typename... Callables>
