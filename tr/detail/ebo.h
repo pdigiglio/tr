@@ -9,14 +9,57 @@
 
 namespace tr {
 namespace detail {
+
 template <typename T, typename Tag,
           bool IsCompressed = !std::is_reference_v<T> && !std::is_final_v<T> &&
                               std::is_empty_v<T>>
-struct ebo : T {};
+struct ebo : T {
+    [[nodiscard]] constexpr auto value() &noexcept -> T & { return *this; }
+    [[nodiscard]] constexpr auto value() const &noexcept -> T const & {
+        return *this;
+    }
+
+    [[nodiscard]] constexpr auto value() &&noexcept -> T && {
+        return std::move(*this);
+    }
+    [[nodiscard]] constexpr auto value() const &&noexcept -> T const && {
+        return std::move(*this);
+    }
+};
 
 template <typename T, typename Tag>
 struct ebo<T, Tag, false> {
     T Val_;
+
+    [[nodiscard]] constexpr auto value() &noexcept -> T & { return this->Val_; }
+    [[nodiscard]] constexpr auto value() const &noexcept -> T const & {
+        return this->Val_;
+    }
+
+    [[nodiscard]] constexpr auto value() &&noexcept -> T && {
+        return std::move(*this).Val_;
+    }
+    [[nodiscard]] constexpr auto value() const &&noexcept -> T const && {
+        return std::move(*this).Val_;
+    }
+};
+
+template <typename T, typename Tag>
+struct ebo<T &&, Tag, false> {
+    T &&Val_;
+
+    [[nodiscard]] constexpr auto value() const noexcept -> T && {
+        return this->Val_;
+    }
+};
+
+template <typename T, typename Tag>
+struct ebo<T &, Tag, false> {
+    T &Val_;
+
+    [[nodiscard]] constexpr auto value() const noexcept -> T & {
+        return this->Val_;
+    }
 };
 
 template <typename>
