@@ -46,7 +46,8 @@ struct validity_checker {
 };
 
 template <typename T>
-constexpr validity_checker<T> check_expr(T) noexcept {
+[[nodiscard]] constexpr auto check_expr(T &&) noexcept
+    -> validity_checker<T &&> {
     return {};
 }
 } // namespace detail
