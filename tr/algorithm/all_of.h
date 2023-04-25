@@ -1,12 +1,12 @@
 #pragma once
 
-#include "./fwd/all_of.h"
+#include "fwd/all_of.h"
 
-#include "./fwd/at.h"
-#include "./fwd/length.h"
+#include "../fwd/at.h"
+#include "../fwd/length.h"
 
-#include "./detail/type_traits.h"
-#include "./indices_for.h"
+#include "../detail/type_traits.h"
+#include "../indices_for.h"
 
 #include <utility>
 

@@ -9,7 +9,10 @@ target_compile_features(tr INTERFACE cxx_std_17)
 if (MSVC)
     set(TR_SOURCE_LIST
         tr/algorithm.h
-        tr/all_of.h
+        tr/algorithm/all_of.h
+        tr/algorithm/for_each.h
+        tr/algorithm/fwd/all_of.h
+        tr/algorithm/fwd/for_each.h
         tr/as_array.h
         tr/at.h
         tr/combinator.h
@@ -20,12 +23,9 @@ if (MSVC)
         tr/detail/type_traits.h
         tr/detail/utility.h
         tr/drop_view.h
-        tr/for_each.h
         tr/forward_as_base.h
-        tr/fwd/all_of.h
         tr/fwd/at.h
         tr/fwd/drop_view.h
-        tr/fwd/for_each.h
         tr/fwd/indices_for.h
         tr/fwd/is_valid.h
         tr/fwd/length.h

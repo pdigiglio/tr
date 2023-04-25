@@ -1,4 +1,4 @@
-#include <tr/all_of.h>
+#include <tr/algorithm/all_of.h>
 
 // -- TODO: I need to include these because they're needed by tr/all_of.h and
 // this is counter-intuitive.

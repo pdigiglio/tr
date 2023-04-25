@@ -1,6 +1,6 @@
 #include <tr/reverse_view.h>
 
-#include <tr/all_of.h>
+#include <tr/algorithm/all_of.h>
 #include <tr/tuple_protocol/std_integer_sequence.h>
 
 using tr::reverse;

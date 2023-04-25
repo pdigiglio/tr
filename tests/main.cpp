@@ -9,13 +9,13 @@
 #include "tr/detail/ebo.h"
 #include "tr/detail/utility.h"
 #include "tr/drop_view.h"
-#include "tr/for_each.h"
 #include "tr/indices_for.h"
 #include "tr/overloaded.h"
 #include "tr/tuple.h"
 #include "tr/tuple_view.h"
 #include "tr/unpack.h"
 #include "tr/value_sequence.h"
+#include <tr/algorithm/for_each.h>
 
 #include <algorithm>
 #include <array>

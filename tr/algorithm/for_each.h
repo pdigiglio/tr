@@ -1,10 +1,10 @@
 #pragma once
 
-#include "fwd/at.h"
 #include "fwd/for_each.h"
-#include "fwd/indices_for.h"
 
-#include "detail/type_traits.h"
+#include "../fwd/at.h"
+#include "../fwd/indices_for.h"
+#include "../detail/type_traits.h"
 
 #include <utility>
 
