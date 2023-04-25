@@ -1,10 +1,26 @@
 #pragma once
 
 #include <cstdint>
-#include <utility>
+#include <type_traits>
 
 namespace tr {
 namespace detail {
+
+template <typename, typename>
+struct same_extents : std::true_type {};
+
+template <typename T, typename U, std::size_t N>
+struct same_extents<T[N], U> : std::false_type {};
+
+template <typename T, typename U, std::size_t N>
+struct same_extents<T, U[N]> : std::false_type {};
+
+template <typename T, typename U, std::size_t N, std::size_t M>
+struct same_extents<T[N], U[M]>
+    : std::bool_constant<(N == M) && same_extents<T, U>::value> {};
+
+template <typename T, typename U>
+static constexpr bool same_extents_v{same_extents<T, U>::value};
 
 template <typename T, std::size_t N, std::size_t... Is>
 [[nodiscard]] constexpr auto
@@ -55,8 +71,31 @@ flat_array_at(T const (&arr)[N]) noexcept {
 }
 
 template <std::size_t I, typename T, std::size_t N>
+[[nodiscard]] constexpr decltype(auto)
+flat_array_at(T (&arr)[N]) noexcept {
+    return flat_array_at_impl<I>(arr);
+}
+
+template <std::size_t I, typename T, std::size_t N>
 [[nodiscard]] constexpr decltype(auto) flat_array_at(T(&&arr)[N]) noexcept {
     return flat_array_at_impl<I>(std::move(arr));
+}
+
+template <typename T, typename U, std::size_t N, std::size_t... Is>
+void flat_array_assign_impl(T (&to)[N], U &&from, std::index_sequence<Is...>) {
+    ((flat_array_at<Is>(to) = flat_array_at<Is>(std::forward<U>(from))), ...);
+}
+
+template <typename T, typename U, std::size_t N>
+auto flat_array_assign(T (&to)[N], U(&&from)[N])
+    -> std::enable_if_t<same_extents_v<T, U>> {
+    flat_array_assign_impl(to, std::move(from), flat_sequence_for_array(to));
+}
+
+template <typename T, typename U, std::size_t N>
+auto flat_array_assign(T (&to)[N], U const (&from)[N])
+    -> std::enable_if_t<same_extents_v<T, U>> {
+    flat_array_assign_impl(to, from, flat_sequence_for_array(to));
 }
 
 } // namespace detail

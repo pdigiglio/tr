@@ -2,6 +2,7 @@
 
 #include <tr/as_array.h>
 #include <tr/at.h>
+#include <tr/lazy_false.h>
 #include <tr/length.h>
 #include <tr/type_constant.h>
 #include <tr/value_constant.h>
@@ -13,9 +14,13 @@ using tr::false_c;
 using tr::true_c;
 using tr::type_c;
 using tr::value_c;
-using tr::zuic;
+
+using namespace tr::literals;
 
 namespace {
+
+template <typename T>
+void td(){ nullptr = tr::lazy_false<T>; }
 
 template <typename T, std::size_t N, std::size_t... Is>
 constexpr bool array_equal_impl(T const (&lhs)[N], T const (&rhs)[N],
@@ -62,6 +67,15 @@ constexpr auto same_args(StdTup, TrTup) noexcept {
                           "Deduced class templates differ");                   \
         }(),                                                                   \
         (void)0)
+
+using tr::detail::same_extents_v;
+static_assert(same_extents_v<int, double>);
+static_assert(!same_extents_v<int[2], double>);
+static_assert(!same_extents_v<int[2], double[1]>);
+static_assert(same_extents_v<int[2], double[2]>);
+static_assert(!same_extents_v<int[2][2], double[2]>);
+static_assert(!same_extents_v<int[2][2], double[2][1]>);
+static_assert(same_extents_v<int[2][2], double[2][2]>);
 
 struct TestTuple {
     void test_ctad() {
@@ -220,44 +234,209 @@ struct TestTuple {
             lhs = tuple_t{};
         }
 
+        {
+            using tr::detail::check_expr;
+            using tr::detail::tup_elem;
+
+            auto assignment_valid = check_expr(
+                [](auto &&lhs, auto &&rhs)
+                    -> decltype(static_cast<decltype(lhs)>(lhs) =
+                                    static_cast<decltype(rhs)>(rhs)) {});
+
+            tup_elem<int[3], 0> to{};
+            static_assert(assignment_valid(to, to));
+            static_assert(!assignment_valid(std::as_const(to), to));
+            static_assert(assignment_valid(to, std::move(to)));
+            // Should this compile? Does assigning to a temporary make sense?
+            static_assert(assignment_valid(std::move(to), to));
+
+            int i[3]{0, 1, 2};
+            tup_elem<int(&)[3], 0> from_i_ref{i};
+            static_assert(assignment_valid(from_i_ref, from_i_ref));
+            static_assert(
+                !assignment_valid(std::as_const(from_i_ref), from_i_ref));
+            static_assert(assignment_valid(from_i_ref, std::move(from_i_ref)));
+            // Should this compile? Does assigning to a temporary make sense?
+            static_assert(assignment_valid(std::move(from_i_ref), from_i_ref));
+
+            static_assert(assignment_valid(to, from_i_ref));
+            static_assert(assignment_valid(to, std::move(from_i_ref)));
+
+            double d[3]{};
+            tup_elem<double(&)[3], 0> from_d_ref{d};
+            static_assert(assignment_valid(to, from_d_ref));
+            static_assert(assignment_valid(to, std::move(from_d_ref)));
+
+            tup_elem<double[3], 0> from_d{d};
+            static_assert(assignment_valid(to, from_d));
+            static_assert(assignment_valid(to, std::move(from_d)));
+        }
+
         // TODO: make this compile.
-        //{
-        //    using tuple0_t = tr::tuple<int, double>;
-        //    using tuple1_t = tr::tuple<int&, double&>;
+        {
+            // TODO: Assert that assigning two tuples of different sizes doesn't
+            // compile.
+            //
+            // TODO: Should I allow assignment from other tuple-like objects?
+            // Or should I delegate this to an `assign` or `copy` algorithm?
+            // (std::tuple is only assignable from std::pair, other than
+            // std::tuple).
+            //
+            // NOTE: If I allow tuple-like assignment, then it's not clear what
+            // this does:
+            //
+            //   int a[]{0,1,2};
+            //   tr::tuple t{a}; // tuple<int[3]> or tuple<int,int,int> ?
+            //
+            // Probably, I should only allow assignment from std::tuple (and
+            // provide a tr::to_tuple which is analogous to std::to_array).
 
-        //    {
-        //        int i{};
-        //        double d{};
+            using tuple0_t = tr::tuple<int, double>;
+            using tuple1_t = tr::tuple<int &, double &>;
 
-        //        tuple0_t lhs{};
-        //        lhs = tuple1_t{i, d};
-        //    }
+            {
+                int i{};
+                double d{};
 
-        //    {
-        //        int i{};
-        //        double d{};
-        //        tuple1_t tie{i, d};
-        //        tie = tuple0_t{};
-        //    }
-        //}
+                tuple0_t lhs{};
+                lhs = tuple1_t{i, d};
+            }
+
+            {
+                int i{};
+                double d{};
+                tuple1_t tie{i, d};
+                tie = tuple0_t{};
+            }
+        }
+
+        {
+
+            using tr::detail::tup_elem_base;
+
+            int i{};
+
+            //tup_elem_base<int &&, 0> teb{std::move(i)};
+            // static_assert(std::is_same_v<decltype(teb.value()), int &&>);
+            //td<decltype(teb.value())>();
+
+            //tr::tuple<int &&> t{1};
+            //t = tr::tuple{i};
+
+            // NOTE: this is UB.
+            std::tuple<int &&> st{1};
+            st = std::tuple{i};
+        }
+
+        {
+            int i{};
+
+            std::tuple<int &> st_ref{i};
+            std::tuple<int> st_val{st_ref};
+
+            static_assert(std::is_constructible_v<
+                          int, decltype(std::declval<
+                                        tr::tuple<int &> >()[0_c])>);
+
+            tr::tuple<int &> t_ref{i};
+            [[maybe_unused]] tr::tuple<int> t_val = t_ref;
+        }
+
+        {
+            //static_assert(std::is_constructible_v<int &, int>);
+            tr::tuple<int> t_val{};
+            [[maybe_unused]] tr::tuple<int &> t_ref = t_val;
+        }
+
+        {
+            std::tuple<int &&> st_rref{1};
+            std::tuple<int> st{st_rref};
+
+            static_assert(std::is_constructible_v<int, int &&>);
+
+            tr::tuple<int &&> t_rref{1};
+
+            //td<decltype(t_rref[zuic<0>])>();
+            //td<decltype(t_rref.value())>();
+
+            [[maybe_unused]] tr::tuple<int> t = t_rref;
+        }
+
+        {
+            tr::tuple<int[2]> t{};
+            [[maybe_unused]] tr::tuple<int(&)[2]> t_lref = t;
+            [[maybe_unused]] tr::tuple<int const(&)[2]> t_lcref = t;
+
+            static_assert(
+                std::is_same_v<decltype(std::move(t).value()), int(&&)[2]>);
+            [[maybe_unused]] tr::tuple<int(&&)[2]> t_rref = std::move(t);
+            [[maybe_unused]] tr::tuple<int const(&&)[2]> t_rcref = std::move(t);
+        }
+
+        {
+            int a[]{0, 1};
+            tr::tuple<int(&)[2]> t_lref{a};
+            [[maybe_unused]] tr::tuple<int[2]> t0 = t_lref;
+
+            tr::tuple<int const(&)[2]> t_lcref{a};
+            [[maybe_unused]] tr::tuple<int[2]> t1 = t_lcref;
+
+            tr::tuple<int(&&)[2]> t_rref{std::move(a)};
+            [[maybe_unused]] tr::tuple<int[2]> t2 = t_rref;
+
+            tr::tuple<int const(&&)[2]> t_rcref{std::move(a)};
+            [[maybe_unused]] tr::tuple<int[2]> t3 = t_rcref;
+        }
+
+        {
+            int i{};
+            tr::tuple<int &> t_ref{i};
+            [[maybe_unused]] tr::tuple<int &> t_val{t_ref};
+        }
     }
 
-    void test_trivial_destructibility() {
+    void test_triviality() {
         struct empty {};
-        static_assert(
-            std::is_trivially_constructible_v<tr::tuple<int[4], char, empty>>);
-        static_assert(
-            std::is_trivially_destructible_v<tr::tuple<int[4], char, empty>>);
 
-        static_assert(
-            std::is_trivially_constructible_v<tr::tuple<int, char, empty>>);
-        static_assert(
-            std::is_trivially_destructible_v<tr::tuple<int[4], char, empty>>);
+        {
+            using tuple_t = tr::tuple<int[4], empty>;
+            static_assert(std::is_nothrow_copy_assignable_v<tuple_t>);
+            static_assert(std::is_standard_layout_v<tuple_t>);
+            static_assert(std::is_trivially_constructible_v<tuple_t>);
+            static_assert(std::is_trivially_copyable_v<tuple_t>);
+            static_assert(std::is_trivially_default_constructible_v<tuple_t>);
+            static_assert(std::is_trivially_destructible_v<tuple_t>);
+        }
 
-        static_assert(
-            !std::is_trivially_constructible_v<tr::tuple<int, char, std::string>>);
-        static_assert(
-            !std::is_trivially_destructible_v<tr::tuple<int, char, std::string>>);
+        {
+            using tuple_t = tr::tuple<int, empty>;
+            static_assert(std::is_nothrow_copy_assignable_v<tuple_t>);
+            static_assert(std::is_standard_layout_v<tuple_t>);
+            static_assert(std::is_trivially_constructible_v<tuple_t>);
+            static_assert(std::is_trivially_copyable_v<tuple_t>);
+            static_assert(std::is_trivially_default_constructible_v<tuple_t>);
+            static_assert(std::is_trivially_destructible_v<tuple_t>);
+        }
+
+        {
+            using tuple_t = tr::tuple<int&, empty>;
+            static_assert(std::is_nothrow_copy_assignable_v<tuple_t>);
+            static_assert(!std::is_standard_layout_v<tuple_t>);
+            static_assert(!std::is_trivially_constructible_v<tuple_t>);
+            static_assert(!std::is_trivially_copyable_v<tuple_t>);
+            static_assert(!std::is_trivially_default_constructible_v<tuple_t>);
+            static_assert(std::is_trivially_destructible_v<tuple_t>);
+        }
+
+        {
+            using tuple_t = tr::tuple<int, std::string>;
+            static_assert(!std::is_nothrow_copy_assignable_v<tuple_t>);
+            static_assert(!std::is_standard_layout_v<tuple_t>);
+            static_assert(!std::is_trivially_constructible_v<tuple_t>);
+            static_assert(!std::is_trivially_copyable_v<tuple_t>);
+            static_assert(!std::is_trivially_default_constructible_v<tuple_t>);
+            static_assert(!std::is_trivially_destructible_v<tuple_t>);
+        }
     }
 
     void test_at() {
@@ -265,18 +444,18 @@ struct TestTuple {
 
         constexpr char str[] = "hello";
         constexpr tuple t{0, 1, str};
-        static_assert(at(t, zuic<0>) == t[zuic<0>]);
-        static_assert(at(t, zuic<1>) == t[zuic<1>]);
+        static_assert(at(t, 0_c) == t[0_c]);
+        static_assert(at(t, 1_c) == t[1_c]);
 
         // Compare addresses
-        static_assert(at(t, zuic<2>) == &t[zuic<2>][0]);
+        static_assert(at(t, 2_c) == &t[2_c][0]);
         // Compare elements
-        static_assert(array_equal(at(t, zuic<2>), t[zuic<2>]));
-        static_assert(array_equal(at(t, zuic<2>), str));
+        static_assert(array_equal(at(t, 2_c), t[2_c]));
+        static_assert(array_equal(at(t, 2_c), str));
 
         using tr::at_c;
-        static_assert(at_c<0>(t) == t[zuic<0>]);
-        static_assert(at_c<1>(t) == t[zuic<1>]);
+        static_assert(at_c<0>(t) == t[0_c]);
+        static_assert(at_c<1>(t) == t[1_c]);
         static_assert(array_equal(at_c<2>(t), str));
     }
 

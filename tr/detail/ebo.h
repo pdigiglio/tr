@@ -49,7 +49,7 @@ struct ebo<T &&, Tag, false> {
     T &&Val_;
 
     [[nodiscard]] constexpr auto value() const noexcept -> T && {
-        return this->Val_;
+        return static_cast<T &&>(this->Val_);
     }
 };
 
