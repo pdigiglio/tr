@@ -15,6 +15,7 @@ if (MSVC)
         tr/combinator.h
         tr/detail/ebo.h
         tr/detail/flat_array.h
+        tr/detail/literal_parser.h
         tr/detail/tuple_traits_utils.h
         tr/detail/type_traits.h
         tr/detail/utility.h
