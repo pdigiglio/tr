@@ -5,7 +5,7 @@
 
 #include <tr/tuple_protocol.h>
 #include <tr/value_constant.h>
-#include <tr/view_interface.h>
+#include <tr/view/view_interface.h>
 
 #include <cstddef>
 #include <utility>

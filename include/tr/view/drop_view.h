@@ -1,11 +1,11 @@
 #pragma once
 
-#include <tr/fwd/drop_view.h>
+#include <tr/view/fwd/drop_view.h>
 
 #include <tr/at.h>
 #include <tr/lazy_false.h>
 #include <tr/length.h>
-#include <tr/tuple_view.h>
+#include <tr/view/tuple_view.h>
 
 #include <utility>
 

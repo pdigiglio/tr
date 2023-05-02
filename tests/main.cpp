@@ -1,21 +1,20 @@
-#include "tr/tuple_protocol/built_in_array.h"
-#include "tr/tuple_protocol/std_integer_sequence.h"
-#include "tr/tuple_protocol/std_pair.h"
-#include "tr/tuple_protocol/std_tuple.h"
-
-#include "tr/algorithm.h"
-#include "tr/at.h"
-#include "tr/combinator.h"
-#include "tr/detail/ebo.h"
-#include "tr/detail/utility.h"
-#include "tr/drop_view.h"
-#include "tr/indices_for.h"
-#include "tr/overloaded.h"
-#include "tr/tuple.h"
-#include "tr/tuple_view.h"
-#include "tr/unpack.h"
-#include "tr/value_sequence.h"
+#include <tr/algorithm.h>
 #include <tr/algorithm/for_each.h>
+#include <tr/at.h>
+#include <tr/combinator.h>
+#include <tr/detail/ebo.h>
+#include <tr/detail/utility.h>
+#include <tr/indices_for.h>
+#include <tr/overloaded.h>
+#include <tr/tuple.h>
+#include <tr/tuple_protocol/built_in_array.h>
+#include <tr/tuple_protocol/std_integer_sequence.h>
+#include <tr/tuple_protocol/std_pair.h>
+#include <tr/tuple_protocol/std_tuple.h>
+#include <tr/unpack.h>
+#include <tr/value_sequence.h>
+#include <tr/view/drop_view.h>
+#include <tr/view/tuple_view.h>
 
 #include <algorithm>
 #include <array>

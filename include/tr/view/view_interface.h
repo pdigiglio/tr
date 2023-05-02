@@ -1,6 +1,6 @@
 #pragma once
 
-#include <tr/fwd/view_interface.h>
+#include <tr/view/fwd/view_interface.h>
 
 #include <tr/at.h>
 #include <tr/detail/type_traits.h>
@@ -13,6 +13,9 @@
 
 namespace tr {
 
+/// @brief 
+/// @tparam Derived 
+/// @ingroup views 
 template <typename Derived>
 struct view_interface {
 

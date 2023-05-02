@@ -1,9 +1,9 @@
 #pragma once
 
-#include <tr/fwd/reverse_view.h>
+#include <tr/view/fwd/reverse_view.h>
 
 #include <tr/indices_for.h>
-#include <tr/tuple_view.h>
+#include <tr/view/tuple_view.h>
 
 namespace tr {
 
