@@ -15,7 +15,7 @@ set(SOURCE_LIST
 
 add_executable(tests ${SOURCE_LIST})
 target_link_libraries(tests PRIVATE tr) 
-target_include_directories(tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+#target_include_directories(tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 if (MSVC)
     target_compile_options(tests PRIVATE /W4)
