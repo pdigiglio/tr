@@ -2,6 +2,7 @@ set(SOURCE_LIST
     all_of.cpp
     drop_view.cpp
     ebo.cpp
+    fold_left.cpp
     forward_as_base.cpp
     overloaded.cpp
     reverse_view.cpp
