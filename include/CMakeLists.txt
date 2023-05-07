@@ -16,6 +16,7 @@ if (MSVC)
         tr/detail/utility.h
         tr/forward_as_base.h
         tr/fwd/at.h
+        tr/fwd/combinator.h
         tr/fwd/indices_for.h
         tr/fwd/is_valid.h
         tr/fwd/length.h

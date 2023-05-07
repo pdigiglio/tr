@@ -1,115 +1,135 @@
 #pragma once
 
-#include <tr/detail/ebo.h>
-#include <tr/detail/type_traits.h>
-#include <tr/detail/utility.h>
+#include <tr/fwd/combinator.h>
 
-#include <utility>
+#include <tr/detail/ebo.h>
+#include <tr/forward_as_base.h>
+#include <tr/overloaded.h>
+
+#include <type_traits>
 
 namespace tr {
+
 namespace detail {
-enum struct fold_side { left, right };
-
-template <fold_side S>
-struct apply_side_tag {};
-static constexpr apply_side_tag<fold_side::left> apply_left{};
-static constexpr apply_side_tag<fold_side::right> apply_right{};
-
-template <std::size_t>
-struct combinator_tag;
-
-template <typename BinaryOp>
-struct compressed_op : ebo<BinaryOp, combinator_tag<0>> {
-    constexpr decltype(auto) get_operator() &noexcept {
-        return compressed_op::get_operator_impl(*this);
-    }
-
-    constexpr decltype(auto) get_operator() const &noexcept {
-        return compressed_op::get_operator_impl(*this);
-    }
-
-    constexpr decltype(auto) get_operator() &&noexcept {
-        return compressed_op::get_operator_impl(std::move(*this));
-    }
-
-    constexpr decltype(auto) get_operator() const &&noexcept {
-        return compressed_op::get_operator_impl(std::move(*this));
-    }
-
-  private:
-    template <typename CompOp>
-    static constexpr decltype(auto)
-    get_operator_impl(CompOp &&compOp) noexcept {
-        using ebo_t = ebo<BinaryOp, combinator_tag<0>>;
-        return get_ebo_val(forward_as_base<ebo_t, CompOp>(compOp));
-    }
-};
+struct combinator_tag /*unimplemented*/;
 } // namespace detail
 
 template <typename BinaryOp, typename ValT>
-struct combinator : detail::compressed_op<BinaryOp>,
-                    detail::ebo<ValT, detail::combinator_tag<1>> {
+struct combinator : detail::CallableWrapper<BinaryOp>,
+                    detail::ebo<ValT, detail::combinator_tag> {
+
   private:
-    template <typename Comb, typename Arg, detail::fold_side Side>
-    constexpr static decltype(auto) call_op(Comb &&comb, Arg &&arg,
-                                            detail::apply_side_tag<Side>) {
-        if constexpr (Side == detail::fold_side::left) {
-            return comb.get_operator()(std::forward<Comb>(comb)(),
-                                       std::forward<Arg>(arg));
-        } else {
-            return comb.get_operator()(std::forward<Arg>(arg),
-                                       std::forward<Comb>(comb)());
-        }
+    using callable_base_t = detail::CallableWrapper<BinaryOp>;
+    using ebo_base_t = detail::ebo<ValT, detail::combinator_tag>;
+
+    template <typename Comb, typename Arg, bool IsLeft>
+    constexpr static auto apply(Comb &&, Arg &&arg, std::true_type /*isVoid*/,
+                                std::bool_constant<IsLeft> /*isLeft*/) noexcept
+        -> Arg && {
+        return static_cast<Arg &&>(arg);
     }
 
-    template <typename Comb>
-    constexpr static decltype(auto) get_val(Comb &&comb) noexcept {
-        using ebo_t = detail::ebo<ValT, detail::combinator_tag<1>>;
-        return get_ebo_val(forward_as_base<ebo_t, Comb>(comb));
+    template <typename Comb, typename Arg>
+    constexpr static auto apply(Comb &&comb, Arg &&arg,
+                                std::false_type /*isVoid*/,
+                                std::true_type /*isLeft*/) -> decltype(auto) {
+        return static_cast<Comb &&>(comb).callable_base_t::operator()(
+            static_cast<Comb &&>(comb).ebo_base_t::value(),
+            static_cast<Arg &&>(arg));
+    }
+
+    template <typename Comb, typename Arg, typename Val_>
+    constexpr static auto apply(Comb &&comb, Arg &&arg,
+                                std::false_type /*isVoid*/,
+                                std::false_type /*isLeft*/) -> decltype(auto) {
+        return static_cast<Comb &&>(comb).callable_base_t::operator()(
+            static_cast<Arg &&>(arg),
+            static_cast<Comb &&>(comb).ebo_base_t::value());
+    }
+
+    template <typename Comb, typename Arg, bool IsLeft>
+    constexpr static auto pipe_impl(Comb &&comb, Arg &&arg,
+                                    std::integral_constant<bool, IsLeft> isLeft)
+        -> decltype(auto) {
+
+        typename std::is_void<ValT>::type isVoid{};
+        using res_t = decltype(combinator::apply(static_cast<Comb &&>(comb),
+                                                 static_cast<Arg &&>(arg),
+                                                 isVoid, isLeft));
+        return combinator<BinaryOp, res_t>{
+            forward_as_base<callable_base_t, Comb>(comb),
+            combinator::apply(static_cast<Comb &&>(comb),
+                              static_cast<Arg &&>(arg), isVoid, isLeft)};
+    }
+
+    template <typename Comb, typename Arg>
+    constexpr static auto left_pipe_impl(Comb &&comb, Arg &&arg)
+        -> decltype(auto) {
+        std::true_type isLeft{};
+        return combinator::pipe_impl(static_cast<Comb &&>(comb),
+                                     static_cast<Arg &&>(arg), isLeft);
+    }
+
+    template <typename Comb, typename Arg>
+    constexpr static auto right_pipe_impl(Comb &&comb, Arg &&arg)
+        -> decltype(auto) {
+        std::false_type isLeft{};
+        return combinator::pipe_impl(static_cast<Comb &&>(comb),
+                                     static_cast<Arg &&>(arg), isLeft);
     }
 
   public:
-    using detail::compressed_op<BinaryOp>::get_operator;
+    // -- Note: these constructors are as a GCC work-around only  --
+    template <typename Op, typename V, typename Val_ = ValT,
+              typename = std::enable_if_t<!std::is_void_v<Val_>>>
+    constexpr explicit combinator(Op &&op_, V &&val_)
+        : callable_base_t{static_cast<Op &&>(op_)},
+          ebo_base_t{static_cast<V &&>(val_)} {}
 
-    constexpr decltype(auto) operator()() & {
-        return combinator::get_val(*this);
+    template <typename Op, typename Val_ = ValT,
+              typename = std::enable_if_t<std::is_void_v<Val_>>>
+    constexpr explicit combinator(Op &&op_)
+        : callable_base_t{static_cast<Op &&>(op_)}, ebo_base_t{} {}
+    // --
+
+    template <typename Arg>
+    friend constexpr auto operator|(combinator const &comb, Arg &&arg) {
+        return left_pipe_impl(comb, static_cast<Arg &&>(arg));
     }
 
-    constexpr decltype(auto) operator()() const & {
-        return combinator::get_val(*this);
+    template <typename Arg>
+    friend constexpr auto operator|(combinator &comb, Arg &&arg) {
+        return left_pipe_impl(comb, static_cast<Arg &&>(arg));
     }
 
-    constexpr decltype(auto) operator()() && {
-        return combinator::get_val(std::move(*this));
+    template <typename Arg>
+    friend constexpr auto operator|(combinator &&comb, Arg &&arg) {
+        return left_pipe_impl(std::move(comb), static_cast<Arg &&>(arg));
     }
 
-    constexpr decltype(auto) operator()() const && {
-        return combinator::get_val(std::move(*this));
+    template <typename Arg>
+    friend constexpr auto operator|(combinator const &&comb, Arg &&arg) {
+        return left_pipe_impl(std::move(comb), static_cast<Arg &&>(arg));
     }
 
-    template <typename Arg, detail::fold_side Side>
-    constexpr decltype(auto) operator()(Arg &&arg,
-                                        detail::apply_side_tag<Side> side) {
-        return combinator::call_op(*this, std::forward<Arg>(arg), side);
+    template <typename Arg>
+    friend constexpr auto operator|(Arg &&arg, combinator const &comb) {
+        return right_pipe_impl(comb, static_cast<Arg &&>(arg));
     }
 
-    template <typename Arg, detail::fold_side Side>
-    constexpr decltype(auto)
-    operator()(Arg &&arg, detail::apply_side_tag<Side> side) const {
-        return combinator::call_op(*this, std::forward<Arg>(arg), side);
+    template <typename Arg>
+    friend constexpr auto operator|(Arg &&arg, combinator &comb) {
+        return right_pipe_impl(comb, static_cast<Arg &&>(arg));
     }
-};
 
-template <typename BinaryOp>
-struct combinator<BinaryOp, void> : detail::compressed_op<BinaryOp> {
-    using detail::compressed_op<BinaryOp>::get_operator;
+    template <typename Arg>
+    friend constexpr auto operator|(Arg &&arg, combinator &&comb) {
+        return right_pipe_impl(std::move(comb), static_cast<Arg &&>(arg));
+    }
 
-    // No value to get
-    constexpr void operator()() const noexcept {}
-
-    template <typename T, detail::fold_side S>
-    constexpr T &&operator()(T &&t, detail::apply_side_tag<S>) const noexcept {
-        return std::forward<T>(t);
+    template <typename Arg>
+    friend constexpr auto operator|(Arg &&arg, combinator const &&comb) {
+        return right_pipe_impl(std::move(comb), static_cast<Arg &&>(arg));
     }
 };
 
@@ -119,34 +139,4 @@ combinator(BinaryOp &&) -> combinator<BinaryOp, void>;
 template <typename BinaryOp, typename Val>
 combinator(BinaryOp &&, Val &&) -> combinator<BinaryOp, Val>;
 
-namespace detail {
-template <typename Comb, typename Arg, fold_side Side>
-constexpr decltype(auto) pipe_impl(Comb &&comb, Arg &&arg,
-                                   apply_side_tag<Side> side) {
-    return combinator{std::forward<Comb>(comb).get_operator(),
-                      std::forward<Comb>(comb)(std::forward<Arg>(arg), side)};
-}
-} // namespace detail
-
-template <typename>
-struct is_combinator : std::false_type {};
-
-template <typename BinaryOp, typename ValT>
-struct is_combinator<combinator<BinaryOp, ValT>> : std::true_type {};
-
-template <typename Comb, typename Arg,
-          typename = std::enable_if_t<
-              is_combinator<detail::remove_cvref_t<Comb>>::value>>
-constexpr decltype(auto) operator|(Comb &&comb, Arg &&arg) {
-    return detail::pipe_impl(std::forward<Comb>(comb), std::forward<Arg>(arg),
-                             detail::apply_left);
-}
-
-template <typename Comb, typename Arg,
-          typename = std::enable_if_t<
-              is_combinator<detail::remove_cvref_t<Comb>>::value>>
-constexpr decltype(auto) operator|(Arg &&arg, Comb &&comb) {
-    return detail::pipe_impl(std::forward<Comb>(comb), std::forward<Arg>(arg),
-                             detail::apply_right);
-}
 } // namespace tr

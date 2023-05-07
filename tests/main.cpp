@@ -39,8 +39,6 @@
 //  3. Some kind of cx iota to generate compile time indices.
 
 namespace {
-template <typename...>
-void foo();
 
 // Check that class tr::combinator behaves like I expect.
 struct TestCombinator {
@@ -52,10 +50,11 @@ struct TestCombinator {
             constexpr combinator minComb{
                 [](auto i, auto j) { return i < j ? i : j; }};
             static_assert(sizeof(minComb) == 1);
-            static_assert(std::is_aggregate_v<decltype(minComb)>);
+            // static_assert(std::is_aggregate_v<decltype(minComb)>);
 
             constexpr auto minVal = std::apply(
-                [=](auto... args) { return (minComb | ... | args)(); }, vals);
+                [=](auto... args) { return (minComb | ... | args).value(); },
+                vals);
 
             static_assert(minVal == std::get<0>(vals));
         }
@@ -64,42 +63,42 @@ struct TestCombinator {
             constexpr combinator maxComb{
                 [](auto i, auto j) { return i > j ? i : j; }, 5};
             static_assert(sizeof(maxComb) == sizeof(int));
-            static_assert(std::is_aggregate_v<decltype(maxComb)>);
+            //static_assert(std::is_aggregate_v<decltype(maxComb)>);
 
             constexpr auto max = std::apply(
-                [=](auto... args) { return (maxComb | ... | args)(); }, vals);
+                [=](auto... args) { return (maxComb | ... | args).value(); }, vals);
 
-            constexpr auto init = maxComb();
+            constexpr auto init = maxComb.value();
             static_assert(max == init);
         }
     }
 
     void value_categories() {
-        using tr::combinator;
+        //using tr::combinator;
 
-        {
-            combinator comb{[](int, int) {}};
-            static_assert(std::is_rvalue_reference_v<
-                              decltype(std::move(comb).get_operator())> &&
-                          !std::is_const_v<std::remove_reference_t<
-                              decltype(std::move(comb).get_operator())>>);
+        //{
+        //    combinator comb{[](int, int) {}};
+        //    static_assert(std::is_rvalue_reference_v<
+        //                      decltype(std::move(comb).get_operator())> &&
+        //                  !std::is_const_v<std::remove_reference_t<
+        //                      decltype(std::move(comb).get_operator())>>);
 
-            static_assert(
-                std::is_rvalue_reference_v<
-                    decltype(std::move(std::as_const(comb)).get_operator())> &&
-                std::is_const_v<std::remove_reference_t<
-                    decltype(std::move(std::as_const(comb)).get_operator())>>);
+        //    static_assert(
+        //        std::is_rvalue_reference_v<
+        //            decltype(std::move(std::as_const(comb)).get_operator())> &&
+        //        std::is_const_v<std::remove_reference_t<
+        //            decltype(std::move(std::as_const(comb)).get_operator())>>);
 
-            static_assert(
-                std::is_lvalue_reference_v<decltype(comb.get_operator())> &&
-                !std::is_const_v<
-                    std::remove_reference_t<decltype(comb.get_operator())>>);
+        //    static_assert(
+        //        std::is_lvalue_reference_v<decltype(comb.get_operator())> &&
+        //        !std::is_const_v<
+        //            std::remove_reference_t<decltype(comb.get_operator())>>);
 
-            static_assert(std::is_lvalue_reference_v<
-                              decltype(std::as_const(comb).get_operator())> &&
-                          std::is_const_v<std::remove_reference_t<
-                              decltype(std::as_const(comb).get_operator())>>);
-        }
+        //    static_assert(std::is_lvalue_reference_v<
+        //                      decltype(std::as_const(comb).get_operator())> &&
+        //                  std::is_const_v<std::remove_reference_t<
+        //                      decltype(std::as_const(comb).get_operator())>>);
+        //}
     }
 };
 
