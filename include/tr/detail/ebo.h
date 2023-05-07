@@ -10,8 +10,9 @@ namespace tr {
 namespace detail {
 
 template <typename T, typename Tag,
-          bool IsCompressed = !std::is_reference_v<T> && !std::is_final_v<T> &&
-                              std::is_empty_v<T>>
+          bool IsCompressed =
+              std::is_void_v<T> || (!std::is_reference_v<T> &&
+                                    !std::is_final_v<T> && std::is_empty_v<T>)>
 struct ebo : T {
     [[nodiscard]] constexpr auto value() &noexcept -> T & { return *this; }
     [[nodiscard]] constexpr auto value() const &noexcept -> T const & {
@@ -25,6 +26,9 @@ struct ebo : T {
         return std::move(*this);
     }
 };
+
+template <typename Tag>
+struct ebo<void, Tag, true> {};
 
 template <typename T, typename Tag>
 struct ebo<T, Tag, false> {
@@ -93,5 +97,6 @@ constexpr decltype(auto) get_ebo_val(Ebo &&e) noexcept {
         //     ^ parenthesis preserve value category in the return type.
     }
 }
+
 } // namespace detail
 } // namespace tr
