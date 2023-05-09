@@ -7,8 +7,14 @@
 #include <tr/view/drop_view.h>
 
 #include <functional>
+#include <string>
 
 namespace {
+
+struct swallow {
+    template <typename... Args>
+    constexpr void operator()(Args &&...) const noexcept {}
+};
 
 struct TestFoldLeft {
 
@@ -18,14 +24,18 @@ struct TestFoldLeft {
             // NOTE:
             //
             // by default, on Clang:
-            // 
+            //
             //  -fbracket-depth=256
-            // 
+            //
             // This option sets the limit for nested parentheses, brackets, and
             // braces.
+            //
+            // Also note, if you drop_c<N> then you can go up to 256+N with the
+            // array below.
             constexpr int values[256]{1, 2, 3, 4};
-            constexpr auto sum = tr::fold_left(values | tr::drop_c<4>, 0, std::plus{});
-            //static_assert(sum == 10);
+            constexpr auto sum =
+                tr::fold_left(values | tr::drop_c<4>, 0, std::plus{});
+            // static_assert(sum == 10);
             static_assert(sum == 0);
         }
 
@@ -51,6 +61,24 @@ struct TestFoldLeft {
                 std::is_same_v<decltype(lref_or_value(j)), int const &>);
             static_assert(
                 std::is_same_v<decltype(lref_or_value(std::move(j))), int>);
+        }
+
+        {
+            using res_t =
+                decltype(tr::fold_left(tr::tuple{}, std::string{}, swallow{}));
+            static_assert(std::is_same_v<res_t, std::string>);
+        }
+
+        {
+            std::string s;
+            using res_t = decltype(tr::fold_left(tr::tuple{}, s, swallow{}));
+            static_assert(std::is_same_v<res_t, std::string &>);
+        }
+
+        {
+            std::string const s;
+            using res_t = decltype(tr::fold_left(tr::tuple{}, s, swallow{}));
+            static_assert(std::is_same_v<res_t, std::string const &>);
         }
     }
 };

@@ -3,6 +3,7 @@
 #include <tr/algorithm/fwd/fold_left.h>
 
 #include <tr/combinator.h>
+#include <tr/detail/utility.h>
 #include <tr/unpack.h>
 
 namespace tr {
@@ -11,13 +12,16 @@ template <typename T>
 struct fold_left_impl<T, std::enable_if_t<is_implemented_v<unpack_impl<T>>>> {
 
     template <typename Tuple, typename Init, typename Combinator>
-    static constexpr auto apply(Tuple &&tuple, Init &&init, Combinator &&c) {
+    static constexpr auto apply(Tuple &&tuple, Init &&init, Combinator &&c)
+        -> decltype(auto) {
 
-        auto fold = [&](auto &&...elems) {
-            return (tr::combinator{static_cast<Combinator &&>(c),
-                                   static_cast<Init &&>(init)} |
-                    ... | static_cast<decltype(elems)>(elems))
-                .value();
+        auto fold = [&](auto &&...elems) -> decltype(auto) {
+            combinator comb{static_cast<Combinator &&>(c),
+                            static_cast<Init &&>(init)};
+
+            auto foldExpr =
+                (std::move(comb) | ... | static_cast<decltype(elems)>(elems));
+            return detail::lref_or_value(std::move(foldExpr).value());
         };
 
         return unpack(static_cast<Tuple &&>(tuple), fold);
