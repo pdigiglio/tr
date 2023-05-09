@@ -20,6 +20,7 @@ if (MSVC)
         tr/fwd/at.h
         tr/fwd/combinator.h
         tr/fwd/indices_for.h
+        tr/fwd/is_empty.h
         tr/fwd/is_valid.h
         tr/fwd/length.h
         tr/fwd/tuple.h
@@ -28,6 +29,7 @@ if (MSVC)
         tr/fwd/unpack.h
         tr/fwd/value_constant.h
         tr/indices_for.h
+        tr/is_empty.h
         tr/is_valid.h
         tr/lazy_false.h
         tr/length.h
