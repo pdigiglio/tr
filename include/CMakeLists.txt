@@ -3,9 +3,11 @@ if (MSVC)
         tr/algorithm.h
         tr/algorithm/all_of.h
         tr/algorithm/fold_left.h
+        tr/algorithm/fold_left_first.h
         tr/algorithm/for_each.h
         tr/algorithm/fwd/all_of.h
         tr/algorithm/fwd/fold_left.h
+        tr/algorithm/fwd/fold_left_first.h
         tr/algorithm/fwd/for_each.h
         tr/as_array.h
         tr/at.h
