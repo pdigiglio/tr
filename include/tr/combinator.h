@@ -3,7 +3,6 @@
 #include <tr/fwd/combinator.h>
 
 #include <tr/detail/ebo.h>
-#include <tr/forward_as_base.h>
 #include <tr/overloaded.h>
 
 #include <type_traits>
@@ -57,7 +56,7 @@ struct combinator : detail::CallableWrapper<BinaryOp>,
                                                  static_cast<Arg &&>(arg),
                                                  isVoid, isLeft));
         return combinator<BinaryOp, res_t>{
-            forward_as_base<callable_base_t, Comb>(comb),
+            static_cast<Comb &&>(comb),
             combinator::apply(static_cast<Comb &&>(comb),
                               static_cast<Arg &&>(arg), isVoid, isLeft)};
     }
@@ -134,9 +133,15 @@ struct combinator : detail::CallableWrapper<BinaryOp>,
 };
 
 template <typename BinaryOp>
-combinator(BinaryOp &&) -> combinator<BinaryOp, void>;
+combinator(BinaryOp) -> combinator<BinaryOp, void>;
 
 template <typename BinaryOp, typename Val>
-combinator(BinaryOp &&, Val &&) -> combinator<BinaryOp, Val>;
+combinator(BinaryOp, Val &&) -> combinator<BinaryOp, Val>;
+
+// template <typename BinaryOp>
+// combinator(BinaryOp &&) -> combinator<BinaryOp, void>;
+//
+// template <typename BinaryOp, typename Val>
+// combinator(BinaryOp &&, Val &&) -> combinator<BinaryOp, Val>;
 
 } // namespace tr
