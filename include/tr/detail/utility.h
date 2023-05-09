@@ -23,6 +23,20 @@ template <class T, class U>
             return std::move(x);
     }
 }
+
+/// @brief Forward `t` as a l-value reference, if it's a l-value reference;
+/// or return a move-constructed instance of `T`, if `t` is a r-value
+/// reference.
+///
+/// @detail This function is useful to avoid dangling r-value references.
+///
+/// @tparam T
+/// @param t The value to forward or materialize.
+template <typename T>
+static constexpr auto lref_or_value(T &&t) -> T {
+    return static_cast<T &&>(t);
+}
+
 } // namespace detail
 
 template <int I>
@@ -33,16 +47,16 @@ constexpr std::integral_constant<std::size_t, I> zuic{};
 
 namespace literals {
 
-/// @brief User-defined literal operator for `tr::integral_constant<std::size_t, _>`,
-/// where `_` is the parsed literal value.
+/// @brief User-defined literal operator for `tr::integral_constant<std::size_t,
+/// _>`, where `_` is the parsed literal value.
 template <char... Chars>
 [[nodiscard]] constexpr auto operator""_zuic() noexcept
     -> detail::integral_parser_t<std::size_t, Chars...> {
     return {};
 }
 
-/// @brief User-defined literal operator for `tr::integral_constant<unsigned, _>`,
-/// where `_` is the parsed literal value.
+/// @brief User-defined literal operator for `tr::integral_constant<unsigned,
+/// _>`, where `_` is the parsed literal value.
 template <char... Chars>
 [[nodiscard]] constexpr auto operator""_uic() noexcept
     -> detail::integral_parser_t<unsigned, Chars...> {

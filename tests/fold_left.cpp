@@ -37,6 +37,21 @@ struct TestFoldLeft {
                                            std::multiplies{});
             static_assert(factorial == 479'001'600);
         }
+
+        {
+            using tr::detail::lref_or_value;
+
+            int i{};
+            static_assert(std::is_same_v<decltype(lref_or_value(i)), int &>);
+            static_assert(
+                std::is_same_v<decltype(lref_or_value(std::move(i))), int>);
+
+            int const j{};
+            static_assert(
+                std::is_same_v<decltype(lref_or_value(j)), int const &>);
+            static_assert(
+                std::is_same_v<decltype(lref_or_value(std::move(j))), int>);
+        }
     }
 };
 } // namespace
