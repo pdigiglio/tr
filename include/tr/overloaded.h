@@ -1,7 +1,5 @@
 #pragma once
 
-#include <utility>
-
 namespace tr {
 
 namespace detail {
@@ -13,9 +11,10 @@ struct CallableWrapper<R (*)(Args...)> {
     R (*Func_)(Args...);
 
     constexpr R operator()(Args... args) const {
-        return this->Func_(std::forward<Args>(args)...);
+        return this->Func_(static_cast<Args>(args)...);
     }
 };
+
 } // namespace detail
 
 /// @brief A class to compose a number of `Callables...` and provide an
