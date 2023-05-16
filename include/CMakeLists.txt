@@ -35,6 +35,7 @@ if (MSVC)
         tr/is_valid.h
         tr/lazy_false.h
         tr/length.h
+        tr/macros.h
         tr/overloaded.h
         tr/tuple.h
         tr/tuple_protocol.h

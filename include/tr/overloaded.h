@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tr/macros.h>
+
 namespace tr {
 
 namespace detail {
@@ -35,7 +37,7 @@ struct CallableWrapper<R (*)(Args...)> {
 ///
 /// @tparam ...Callables The callable types.
 template <typename... Callables>
-struct overloaded : detail::CallableWrapper<Callables>... {
+struct TR_EMPTY_BASES overloaded : detail::CallableWrapper<Callables>... {
     using detail::CallableWrapper<Callables>::operator()...;
 };
 

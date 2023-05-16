@@ -3,6 +3,8 @@
 #include <tr/fwd/combinator.h>
 
 #include <tr/detail/ebo.h>
+#include <tr/forward_as_base.h>
+#include <tr/macros.h>
 #include <tr/overloaded.h>
 
 #include <type_traits>
@@ -14,8 +16,8 @@ struct combinator_tag /*unimplemented*/;
 } // namespace detail
 
 template <typename BinaryOp, typename ValT>
-struct combinator : detail::CallableWrapper<BinaryOp>,
-                    detail::ebo<ValT, detail::combinator_tag> {
+struct TR_EMPTY_BASES combinator : detail::CallableWrapper<BinaryOp>,
+                                   detail::ebo<ValT, detail::combinator_tag> {
 
   private:
     using callable_base_t = detail::CallableWrapper<BinaryOp>;
@@ -56,7 +58,7 @@ struct combinator : detail::CallableWrapper<BinaryOp>,
                                                  static_cast<Arg &&>(arg),
                                                  isVoid, isLeft));
         return combinator<BinaryOp, res_t>{
-            static_cast<Comb &&>(comb),
+            forward_as_base<BinaryOp, Comb>(static_cast<Comb &&>(comb)),
             combinator::apply(static_cast<Comb &&>(comb),
                               static_cast<Arg &&>(arg), isVoid, isLeft)};
     }
@@ -78,7 +80,8 @@ struct combinator : detail::CallableWrapper<BinaryOp>,
     }
 
   public:
-    // -- Note: these constructors are as a GCC work-around only  --
+#if defined(__GNUC__)
+    // These constructors are only needed as a GCC work-around
     template <typename Op, typename V, typename Val_ = ValT,
               typename = std::enable_if_t<!std::is_void_v<Val_>>>
     constexpr explicit combinator(Op &&op_, V &&val_)
@@ -89,7 +92,8 @@ struct combinator : detail::CallableWrapper<BinaryOp>,
               typename = std::enable_if_t<std::is_void_v<Val_>>>
     constexpr explicit combinator(Op &&op_)
         : callable_base_t{static_cast<Op &&>(op_)}, ebo_base_t{} {}
-    // --
+
+#endif // defined(__GNUC__)
 
     template <typename Arg>
     friend constexpr auto operator|(combinator const &comb, Arg &&arg) {
@@ -137,11 +141,5 @@ combinator(BinaryOp) -> combinator<BinaryOp, void>;
 
 template <typename BinaryOp, typename Val>
 combinator(BinaryOp, Val &&) -> combinator<BinaryOp, Val>;
-
-// template <typename BinaryOp>
-// combinator(BinaryOp &&) -> combinator<BinaryOp, void>;
-//
-// template <typename BinaryOp, typename Val>
-// combinator(BinaryOp &&, Val &&) -> combinator<BinaryOp, Val>;
 
 } // namespace tr
