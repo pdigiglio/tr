@@ -11,6 +11,7 @@
 #include <tr/detail/tuple_traits_utils.h>
 #include <tr/detail/type_traits.h>
 #include <tr/is_valid.h>
+#include <tr/macros.h>
 #include <tr/tuple_protocol.h>
 #include <tr/type_identity.h>
 #include <tr/type_pack.h>
@@ -261,7 +262,7 @@ struct tup_elem : tup_elem_base<T, I> {
 };
 
 template <typename... Ts, std::size_t... Is>
-struct tuple_base<type_pack<Ts...>, std::index_sequence<Is...>>
+struct TR_EMPTY_BASES tuple_base<type_pack<Ts...>, std::index_sequence<Is...>>
     : tup_elem<Ts, Is>... {
 
   private:
