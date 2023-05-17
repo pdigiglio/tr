@@ -165,6 +165,8 @@ struct TestTuple {
                 decltype(deduced_types_equal<int &, char(&)[6], double &>(
                     rhs))::value);
 
+            rhs = lhs;
+
             lhs.swap(rhs);
             rhs.swap(lhs);
 

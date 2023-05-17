@@ -325,7 +325,7 @@ struct TR_EMPTY_BASES tuple_base<type_pack<Ts...>, std::index_sequence<Is...>>
             [&] {
                 using lhs_t = tup_elem<Ts, Is>;
                 using rhs_t = tup_elem<Us, Is>;
-                static_cast<lhs_t &>(*this) = static_cast<rhs_t &>(other);
+                static_cast<lhs_t &>(*this) = static_cast<rhs_t const &>(other);
             }(),
             ...);
         return *this;
@@ -372,7 +372,7 @@ struct TR_EMPTY_BASES tuple_base<type_pack<Ts...>, std::index_sequence<Is...>>
 };
 } // namespace detail
 
-/// @brief A fixed-size collection of (possibly) hererogeneous values. 
+/// @brief A fixed-size collection of (possibly) hererogeneous values.
 /// @tparam ...Ts The types stored by the tuple (can be empty).
 template <typename... Ts>
 struct tuple
@@ -425,21 +425,21 @@ struct tuple
     /// @return A `tr::tuple<Us...>` constructed from `*this`.
     template <typename... Us>
     //, typename = decltype(tuple::cast_impl( std::declval<tuple const &>(),
-    //type_pack<Us...>{}, index_sequence_t{}))>
+    // type_pack<Us...>{}, index_sequence_t{}))>
     [[nodiscard]] operator tuple<Us...>() const & {
         return tuple::cast_impl(*this, type_pack<Us...>{}, index_sequence_t{});
     }
 
     template <typename... Us>
     //, typename = decltype(tuple::cast_impl( std::declval<tuple const &>(),
-    //type_pack<Us...>{}, index_sequence_t{}))>
+    // type_pack<Us...>{}, index_sequence_t{}))>
     [[nodiscard]] operator tuple<Us...>() & {
         return tuple::cast_impl(*this, type_pack<Us...>{}, index_sequence_t{});
     }
 
     template <typename... Us>
     //, typename = decltype(tuple::cast_impl( std::declval<tuple const &>(),
-    //type_pack<Us...>{}, index_sequence_t{}))>
+    // type_pack<Us...>{}, index_sequence_t{}))>
     [[nodiscard]] operator tuple<Us...>() const && {
         return tuple::cast_impl(std::move(*this), type_pack<Us...>{},
                                 index_sequence_t{});
@@ -447,7 +447,7 @@ struct tuple
 
     template <typename... Us>
     //, typename = decltype(tuple::cast_impl( std::declval<tuple const &>(),
-    //type_pack<Us...>{}, index_sequence_t{}))>
+    // type_pack<Us...>{}, index_sequence_t{}))>
     [[nodiscard]] operator tuple<Us...>() && {
         return tuple::cast_impl(std::move(*this), type_pack<Us...>{},
                                 index_sequence_t{});
