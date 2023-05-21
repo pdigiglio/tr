@@ -3,36 +3,33 @@
 #include <tr/algorithm/fwd/for_each.h>
 
 #include <tr/detail/type_traits.h>
-#include <tr/fwd/at.h>
-#include <tr/fwd/indices_for.h>
-
-#include <utility>
+#include <tr/invoke.h>
+#include <tr/unpack.h>
 
 namespace tr {
 
-template <typename T, typename UnaryFunc>
-constexpr UnaryFunc &&for_each_t::operator()(T &&t, UnaryFunc &&pred) const {
-    using t_t = detail::remove_cvref_t<T>;
-    return for_each_impl<t_t>::apply(std::forward<T>(t),
-                                     std::forward<UnaryFunc>(pred));
+template <typename Tuple, typename UnaryFunc>
+constexpr auto for_each_t::operator()(Tuple &&tuple, UnaryFunc &&func) const
+    -> UnaryFunc && {
+
+    using tuple_t = detail::remove_cvref_t<Tuple>;
+    return for_each_impl<tuple_t>::apply(static_cast<Tuple &&>(tuple),
+                                         static_cast<UnaryFunc &&>(func));
 }
 
-template <typename Tuple>
-struct for_each_impl<Tuple,
-                     std::enable_if_t<is_implemented_v<indices_for_impl<Tuple>> &&
-                                      is_implemented_v<at_impl<Tuple>>>> {
+template <typename T>
+struct for_each_impl<T, std::enable_if_t<is_implemented_v<unpack_impl<T>>>> {
 
-    template <typename Tuple_, typename UnaryFunc, std::size_t... Is>
-    static constexpr UnaryFunc &&apply_impl(Tuple_ &&t, UnaryFunc &&pred,
-                                       std::index_sequence<Is...>) {
-        (std::forward<UnaryFunc>(pred)(at_c<Is>(std::forward<Tuple_>(t))), ...);
-        return std::forward<UnaryFunc>(pred);
-    }
+    template <typename Tuple, typename Func>
+    static constexpr auto apply(Tuple &&tuple, Func &&func) -> Func && {
 
-    template <typename Tuple_, typename UnaryFunc>
-    static constexpr UnaryFunc &&apply(Tuple_ &&t, UnaryFunc &&pred) {
-        return for_each_impl::apply_impl(
-            std::forward<Tuple_>(t), std::forward<UnaryFunc>(pred), indices_for(t));
+        unpack(static_cast<Tuple &&>(tuple), [&](auto &&...elems) {
+            (invoke(static_cast<Func &&>(func),
+                    static_cast<decltype(elems)>(elems)),
+             ...);
+        });
+
+        return static_cast<Func &&>(func);
     }
 };
 
