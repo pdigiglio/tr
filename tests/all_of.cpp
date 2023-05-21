@@ -1,17 +1,10 @@
 #include <tr/algorithm/all_of.h>
 
-// -- TODO: I need to include these because they're needed by tr/all_of.h and
-// this is counter-intuitive.
-#include <tr/at.h>
-#include <tr/length.h>
-// --
-
-#include <tr/as_array.h>
 #include <tr/tuple.h>
 #include <tr/value_constant.h>
+#include <tr/view/drop_view.h>
 
 using tr::all_of;
-using tr::as_array;
 using tr::tuple;
 using tr::value_c;
 using tr::detail::is_complete_v;
@@ -20,6 +13,10 @@ namespace {
 
 struct incomplete;
 struct complete {};
+
+struct Checkable {
+    bool Valid_;
+};
 
 struct TestAllOf {
     void test() {
@@ -41,6 +38,12 @@ struct TestAllOf {
 
         static_assert(all_of(tuple{}, [] { /*unevaluated*/ }),
                       "tr::all_of is not true on an empty tuple");
+
+        {
+            constexpr Checkable arr[]{false, true, true, true};
+            static_assert(!all_of(arr, &Checkable::Valid_));
+            static_assert(all_of(arr | tr::drop_c<1>, &Checkable::Valid_));
+        }
     }
 };
 } // namespace

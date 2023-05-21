@@ -13,7 +13,7 @@
 namespace tr {
 
 template <typename Tuple, typename Func>
-constexpr auto unpack_impl_t ::operator()(Tuple &&t, Func &&f) const
+constexpr auto unpack_impl_t::operator()(Tuple &&t, Func &&f) const
     -> decltype(auto) {
     using tuple_t = detail::remove_cvref_t<Tuple>;
     return unpack_impl<tuple_t>::apply(std::forward<Tuple>(t),
