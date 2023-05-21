@@ -514,7 +514,7 @@ auto swap(tuple<Us...> &lhs, tuple<Us...> &rhs) -> std::enable_if_t<
 /// @param ...args Any number of l-value arguments to construct the `tuple`.
 /// @return A `tuple` of l-value references.
 template <typename... Ts>
-[[nodiscard]] constexpr tuple<Ts &...> tie(Ts &...args) noexcept {
+[[nodiscard]] constexpr auto tie(Ts &...args) noexcept -> tuple<Ts &...> {
     return {args...};
 }
 
@@ -523,9 +523,28 @@ template <typename... Ts>
 /// @param ...args Any number of arguments.
 /// @return A `tuple` of l- or r-value references.
 template <typename... Ts>
-[[nodiscard]] constexpr tuple<Ts &&...>
-forward_as_tuple(Ts &&...args) noexcept {
+[[nodiscard]] constexpr auto forward_as_tuple(Ts &&...args) noexcept
+    -> tuple<Ts &&...> {
     return {std::forward<Ts>(args)...};
+}
+
+/// @brief Creates a `tuple` of l-value reference or (move constructed) values
+/// from its l- or r-value reference arguments.
+///
+/// @details Unlike `forward_as_tuple`, the r-value references won't dangle if
+/// the returned tuple survives the scope of the temporaries it was created
+/// from.
+///
+/// Also check out:
+/// https://vittorioromeo.info/index/blog/capturing_perfectly_forwarded_objects_in_lambdas.html
+///
+/// @todo Add example.
+///
+/// @param ...args The arguments to create the tuple from.
+template <typename... Ts>
+[[nodiscard]] constexpr auto capture_as_tuple(Ts &&...args) noexcept(
+    (std::is_nothrow_constructible_v<Ts, Ts &&> && ...)) -> tuple<Ts...> {
+    return {static_cast<Ts &&>(args)...};
 }
 
 // -- Tuple protocol
