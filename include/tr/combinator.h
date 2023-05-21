@@ -16,11 +16,11 @@ struct combinator_tag /*unimplemented*/;
 } // namespace detail
 
 template <typename BinaryOp, typename ValT>
-struct TR_EMPTY_BASES combinator : detail::CallableWrapper<BinaryOp>,
+struct TR_EMPTY_BASES combinator : detail::overload_elem<BinaryOp>,
                                    detail::ebo<ValT, detail::combinator_tag> {
 
   private:
-    using callable_base_t = detail::CallableWrapper<BinaryOp>;
+    using callable_base_t = detail::overload_elem<BinaryOp>;
     using ebo_base_t = detail::ebo<ValT, detail::combinator_tag>;
 
     template <typename Comb, typename Arg, bool IsLeft>
@@ -58,7 +58,7 @@ struct TR_EMPTY_BASES combinator : detail::CallableWrapper<BinaryOp>,
                                                  static_cast<Arg &&>(arg),
                                                  isVoid, isLeft));
         return combinator<BinaryOp, res_t>{
-            forward_as_base<BinaryOp, Comb>(static_cast<Comb &&>(comb)),
+            forward_as_base<callable_base_t, Comb>(static_cast<Comb &&>(comb)),
             combinator::apply(static_cast<Comb &&>(comb),
                               static_cast<Arg &&>(arg), isVoid, isLeft)};
     }

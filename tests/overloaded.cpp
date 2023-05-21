@@ -4,8 +4,8 @@
 #include <tr/type_constant.h>
 #include <tr/value_constant.h>
 
-#include <utility>
 #include <functional>
+#include <utility>
 
 using tr::overloaded;
 using tr::true_c;
@@ -20,7 +20,8 @@ constexpr auto is_aggregate(Overload &&) noexcept -> bool {
     return std::is_aggregate_v<overload_t>;
 }
 
-auto foo(int) -> tr::type_constant<int> { return {}; }
+auto foo_may_throw(int) -> tr::type_constant<int> { return {}; }
+auto foo_noexcept(int) noexcept -> tr::type_constant<int> { return {}; }
 
 struct TestOverload {
     void test_lambdas() {
@@ -43,7 +44,7 @@ struct TestOverload {
         };
 
         // Check I can mix lambdas, callable objects and function pointers.
-        overloaded ovrld{[](auto) { return -1; }, Callable{}, foo};
+        overloaded ovrld{[](auto) { return -1; }, Callable{}, foo_may_throw};
         static_assert(is_aggregate(ovrld));
 
         static_assert(ovrld("") == -1);
@@ -55,7 +56,7 @@ struct TestOverload {
     }
 
     void test_std_function() {
-        std::function func{foo};
+        std::function func{foo_may_throw};
         overloaded o{func};
         auto res = o(0);
         static_assert(res == type_c<int>);

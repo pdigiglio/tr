@@ -1,4 +1,6 @@
 #include <tr/algorithm.h>
+#include <tr/algorithm/fold_left.h>
+#include <tr/algorithm/fold_left_first.h>
 #include <tr/algorithm/for_each.h>
 #include <tr/at.h>
 #include <tr/combinator.h>
@@ -12,9 +14,11 @@
 #include <tr/tuple_protocol/std_pair.h>
 #include <tr/tuple_protocol/std_tuple.h>
 #include <tr/unpack.h>
+#include <tr/invoke.h>
 #include <tr/value_sequence.h>
 #include <tr/view/drop_view.h>
 #include <tr/view/tuple_view.h>
+#include <tr/view/reverse_view.h>
 
 #include <algorithm>
 #include <array>
@@ -63,10 +67,11 @@ struct TestCombinator {
             constexpr combinator maxComb{
                 [](auto i, auto j) { return i > j ? i : j; }, 5};
             static_assert(sizeof(maxComb) == sizeof(int));
-            //static_assert(std::is_aggregate_v<decltype(maxComb)>);
+            // static_assert(std::is_aggregate_v<decltype(maxComb)>);
 
             constexpr auto max = std::apply(
-                [=](auto... args) { return (maxComb | ... | args).value(); }, vals);
+                [=](auto... args) { return (maxComb | ... | args).value(); },
+                vals);
 
             constexpr auto init = maxComb.value();
             static_assert(max == init);
@@ -74,7 +79,7 @@ struct TestCombinator {
     }
 
     void value_categories() {
-        //using tr::combinator;
+        // using tr::combinator;
 
         //{
         //    combinator comb{[](int, int) {}};
@@ -85,7 +90,8 @@ struct TestCombinator {
 
         //    static_assert(
         //        std::is_rvalue_reference_v<
-        //            decltype(std::move(std::as_const(comb)).get_operator())> &&
+        //            decltype(std::move(std::as_const(comb)).get_operator())>
+        //            &&
         //        std::is_const_v<std::remove_reference_t<
         //            decltype(std::move(std::as_const(comb)).get_operator())>>);
 
@@ -129,9 +135,74 @@ auto array_indexing() {
 }
 
 // --
+
+struct DBRow {
+    int id;
+    std::string name;
+    std::string birthCity;
+    std::string birthCountry;
+};
 } // namespace
 
+namespace tr {
+
+template <>
+struct length_impl<DBRow> {
+    template <typename Sized>
+    [[nodiscard]] constexpr static auto apply(Sized &&) noexcept
+        -> value_constant<4> {
+        return {};
+    }
+};
+
+template <>
+struct at_impl<DBRow> {
+
+    template <typename Iterable, typename Idx>
+    static constexpr decltype(auto) apply(Iterable &&arr, Idx) noexcept {
+        if constexpr (Idx{} == 0) {
+            return arr.id;
+        }
+
+        if constexpr (Idx{} == 1) {
+            return arr.name;
+        }
+
+        if constexpr (Idx{} == 2) {
+            return arr.birthCity;
+        }
+
+        if constexpr (Idx{} == 3) {
+            return arr.birthCountry;
+        }
+    }
+};
+
+} // namespace tr
+
 int main() {
+
+    {
+        // int t[]{0, 1, 2, 3, 4};
+        // tr::tuple t{0, "name", "birthplace"};
+        DBRow t{0, "name", "city", "country"};
+        tr::unpack(t, // | tr::reverse | tr::drop_c<1> | tr::reverse,
+                   [](auto const &...elem) {
+                       ((std::cout << elem << ' '), ...) << '\n';
+                   });
+
+        auto const str = tr::fold_left_first(
+            t, tr::overloaded{
+                   [](int i, std::string str) {
+                       return std::to_string(i) + "-" + str;
+                   },
+                   [](std::string i, std::string str) { return i + "-" + str; },
+               });
+
+        std::puts(str.c_str());
+    }
+
+
     array_indexing<5, 2, 3>();
 
     using tr::tuple;
@@ -216,10 +287,54 @@ int main() {
         static_assert(res == (upTo * (upTo - 1)) / 2);
     }
 
+    {
+        //std::string s;
+        //auto passthrough = [&]() -> decltype(auto) { return s; };
+        //using ret_t =
+        //    decltype(tr::unpack(std::make_index_sequence<0>{}, passthrough));
+
+        //static_assert(std::is_same_v<ret_t, std::string &>);
+
+        // IDEA: propose std::to_string(std::string) { /* passthrough */ }
+        // IDEA: propose std::to_string(char const*) { /* ... */ }
+         static auto const to_str = [](auto i) {
+            if constexpr (std::is_same_v<decltype(i), std::string>)
+                return i;
+            else
+                return std::to_string(i);
+        };
+
+         std::string callStack;
+         callStack = tr::fold_left(std::make_index_sequence<0>{}, callStack,
+                                  [](auto &&sum, auto curr) {
+                                      return "f(" + to_str(std::move(sum)) +
+                                             ", " + to_str(curr) + ")";
+                                  });
+
+         std::puts(callStack.c_str());
+    }
+
+    {
+        struct Accumulator {
+            constexpr int accumulate(int x, int y, int z) const noexcept {
+                return x + y + z;
+            }
+
+            int Acc_;
+        };
+
+        constexpr auto res = tr::unpack(
+            tr::tuple{&Accumulator::accumulate, Accumulator{}, 1, 2, 3},
+            tr::invoke);
+
+        static_assert(res == 6);
+    }
+
     //{
     //    constexpr int arr[3][5]{{0, 1, 2}};
 
-    //    static constexpr auto atImpl = [](auto &&arr, auto idx) -> decltype(auto) {
+    //    static constexpr auto atImpl = [](auto &&arr, auto idx) ->
+    //    decltype(auto) {
     //        return std::forward<decltype(arr)>(arr)[idx];
     //    };
 
@@ -295,7 +410,7 @@ int main() {
 //		///// @brief Implicit cast to another tuple. This will cast both
 // to:
 //		/////  - an homogeneous tuple whose type `U` is such that
-//casting from `T`
+// casting from `T`
 //		/// to
 //		/////  `U` doesn't narrow;
 //		/////  - an heterogeneous tuple;
@@ -316,8 +431,8 @@ int main() {
 //	template <std::size_t I, typename T, auto Val, auto... Vals>
 //	constexpr auto at(
 //		value_tuple_base<value_tuple_tag<T>, value_pack<Val, Vals...>>)
-// noexcept { 		static_assert(I < 1 + sizeof...(Vals)); 		if
-// constexpr (sizeof...(Vals) == 0 || I == 0) { 			return Val;
+// noexcept { 		static_assert(I < 1 + sizeof...(Vals)); if constexpr
+// (sizeof...(Vals) == 0 || I == 0) { 			return Val;
 //		}
 //		else {
 //			// auto filtered = []<std::size_t...
@@ -537,7 +652,7 @@ int main() {
 //	constexpr auto operator+(value_tuple_base<T, Vals0...>,
 //		value_tuple_base<U, Vals1...>) noexcept
 //		-> value_tuple_base<std::common_type_t<T, U>, Vals0...,
-//Vals1...> { 		return {};
+// Vals1...> { 		return {};
 //	}
 //
 //	template <typename T, auto... Vals0, auto Val>

@@ -1,12 +1,13 @@
 #include <tr/algorithm/fold_left.h>
+#include <tr/algorithm/fold_left_first.h>
 
-#include <tr/lazy_false.h>
 #include <tr/tuple.h>
 #include <tr/tuple_protocol/std_integer_sequence.h>
 #include <tr/value_constant.h>
 #include <tr/view/drop_view.h>
 
 #include <functional>
+#include <numeric>
 #include <string>
 
 namespace {
@@ -79,6 +80,29 @@ struct TestFoldLeft {
             std::string const s;
             using res_t = decltype(tr::fold_left(tr::tuple{}, s, swallow{}));
             static_assert(std::is_same_v<res_t, std::string const &>);
+        }
+
+        {
+            struct Accumulator {
+                constexpr Accumulator add(int x) const noexcept {
+                    return Accumulator{this->Acc_ + x};
+                }
+
+                int Acc_;
+            };
+
+            constexpr auto res0 = tr::fold_left(
+                tr::tuple{1, 2, 3}, Accumulator{}, &Accumulator::add);
+            static_assert(res0.Acc_ == 6);
+
+            constexpr auto res1 = tr::fold_left_first(
+                tr::tuple{Accumulator{}, 1, 2, 3}, &Accumulator::add);
+            static_assert(res1.Acc_ == 6);
+
+            constexpr auto res2 = tr::fold_left(
+                tr::tuple{1, 2, 3}, Accumulator{},
+                [](Accumulator acc, int i) { return acc.add(i); });
+            static_assert(res2.Acc_ == 6);
         }
     }
 };

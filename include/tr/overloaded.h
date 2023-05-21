@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tr/detail/callable_wrapper_impl.h>
+#include <tr/fwd/type_pack.h>
 #include <tr/macros.h>
 
 namespace tr {
@@ -9,102 +11,98 @@ namespace detail {
 /// @brief Primary template.
 /// @tparam Callable A class type with a call operator.
 template <typename Callable>
-struct CallableWrapper : Callable {};
+struct overload_elem : Callable {};
 
 /// @brief Specialization for function pointers.
 /// @tparam R The function return type.
 /// @tparam ...Args The function argument types.
 template <typename R, typename... Args>
-struct CallableWrapper<R (*)(Args...)> {
-    R (*Func_)(Args...);
+struct overload_elem<R (*)(Args...)>
+    : fptr_wrapper<R (*)(Args...), false, R, type_pack<Args...>> {};
 
-    constexpr auto operator()(Args... args) const -> R {
-        return this->Func_(static_cast<Args>(args)...);
-    }
-};
+/// @brief Specialization for `noexcept` function pointers.
+/// @tparam R The function return type.
+/// @tparam ...Args The function argument types.
+template <typename R, typename... Args>
+struct overload_elem<R (*)(Args...) noexcept>
+    : fptr_wrapper<R (*)(Args...) noexcept, true, R, type_pack<Args...>> {};
 
 /// @brief Specialization for pointer to non-const member functions.
 /// @tparam R The function return type.
 /// @tparam ...Args The function argument types.
 /// @tparam C The class type.
 template <typename R, typename C, typename... Args>
-struct CallableWrapper<R (C::*)(Args...)> {
-    R (C::*Func_)(Args...);
+struct overload_elem<R (C::*)(Args...)>
+    : mem_fptr_wrapper<R (C::*)(Args...), false, type_pack<C &, C &&, C *>, R,
+                       type_pack<Args...>> {};
 
-    constexpr auto operator()(C &c, Args... args) const /* noexcept(?) */ -> R {
-        return (c.*this->Func_)(static_cast<Args>(args)...);
-    }
-
-    constexpr auto operator()(C &&c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (static_cast<C &&>(c).*this->Func_)(static_cast<Args>(args)...);
-    }
-
-    constexpr auto operator()(C *c, Args... args) const /* noexcept(?) */ -> R {
-        return (c->*this->Func_)(static_cast<Args>(args)...);
-    }
-};
+/// @brief Specialization for pointer to `noexcept` non-const member functions.
+/// @tparam R The function return type.
+/// @tparam ...Args The function argument types.
+/// @tparam C The class type.
+template <typename R, typename C, typename... Args>
+struct overload_elem<R (C::*)(Args...) noexcept>
+    : mem_fptr_wrapper<R (C::*)(Args...) noexcept, true,
+                       type_pack<C &, C &&, C *>, R, type_pack<Args...>> {};
 
 /// @brief Specialization for pointer to const member functions.
 /// @tparam R The function return type.
 /// @tparam ...Args The function arguments types.
 /// @tparam C The class type.
 template <typename R, typename C, typename... Args>
-struct CallableWrapper<R (C::*)(Args...) const> {
-    R (C::*Func_)(Args...) const;
+struct overload_elem<R (C::*)(Args...) const>
+    : mem_fptr_wrapper<R (C::*)(Args...) const, false,
+                       type_pack<C const &, C const &&, C const *>, R,
+                       type_pack<Args...>> {};
 
-    constexpr auto operator()(C const &c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (c.*this->Func_)(static_cast<Args>(args)...);
-    }
-
-    constexpr auto operator()(C const &&c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (static_cast<C &&>(c).*this->Func_)(static_cast<Args>(args)...);
-    }
-
-    constexpr auto operator()(C const *c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (c->*this->Func_)(static_cast<Args>(args)...);
-    }
-};
+/// @brief Specialization for pointer to `noexcept` const member functions.
+/// @tparam R The function return type.
+/// @tparam ...Args The function arguments types.
+/// @tparam C The class type.
+template <typename R, typename C, typename... Args>
+struct overload_elem<R (C::*)(Args...) const noexcept>
+    : mem_fptr_wrapper<R (C::*)(Args...) const noexcept, true,
+                       type_pack<C const &, C const &&, C const *>, R,
+                       type_pack<Args...>> {};
 
 /// @brief Specialization for pointer to non-const l-value member functions.
 /// @tparam R The function return type.
 /// @tparam ...Args The function argument types.
 /// @tparam C The class type.
 template <typename R, typename C, typename... Args>
-struct CallableWrapper<R (C::*)(Args...) &> {
-    R (C::*Func_)(Args...) &;
+struct overload_elem<R (C::*)(Args...) &>
+    : mem_fptr_wrapper<R (C::*)(Args...) &, false, type_pack<C &, C *>, R,
+                       type_pack<Args...>> {};
 
-    constexpr auto operator()(C &c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (c.*this->Func_)(static_cast<Args>(args)...);
-    }
-
-    constexpr auto operator()(C *c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (c->*this->Func_)(static_cast<Args>(args)...);
-    }
-};
+/// @brief Specialization for pointer to `noexcept` non-const l-value member
+/// functions.
+/// @tparam R The function return type.
+/// @tparam ...Args The function argument types.
+/// @tparam C The class type.
+template <typename R, typename C, typename... Args>
+struct overload_elem<R (C::*)(Args...) &noexcept>
+    : mem_fptr_wrapper<R (C::*)(Args...) &noexcept, true, type_pack<C &, C *>,
+                       R, type_pack<Args...>> {};
 
 /// @brief Specialization for pointer to const l-value member functions.
 /// @tparam R The function return type.
 /// @tparam ...Args The function argument types.
 /// @tparam C The class type.
 template <typename R, typename C, typename... Args>
-struct CallableWrapper<R (C::*)(Args...) const &> {
-    R (C::*Func_)(Args...) const &;
+struct overload_elem<R (C::*)(Args...) const &>
+    : mem_fptr_wrapper<R (C::*)(Args...) const &, false,
+                       type_pack<C const &, C const *>, R, type_pack<Args...>> {
+};
 
-    constexpr auto operator()(C const &c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (c.*this->Func_)(static_cast<Args>(args)...);
-    }
-
-    constexpr auto operator()(C const *c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (c->*this->Func_)(static_cast<Args>(args)...);
-    }
+/// @brief Specialization for pointer to `noexcept` const l-value member
+/// functions.
+/// @tparam R The function return type.
+/// @tparam ...Args The function argument types.
+/// @tparam C The class type.
+template <typename R, typename C, typename... Args>
+struct overload_elem<R (C::*)(Args...) const &noexcept>
+    : mem_fptr_wrapper<R (C::*)(Args...) const &noexcept, true,
+                       type_pack<C const &, C const *>, R, type_pack<Args...>> {
 };
 
 /// @brief Specialization for pointer to non-const r-value member functions.
@@ -112,67 +110,44 @@ struct CallableWrapper<R (C::*)(Args...) const &> {
 /// @tparam ...Args The function argument types.
 /// @tparam C The class type.
 template <typename R, typename C, typename... Args>
-struct CallableWrapper<R (C::*)(Args...) &&> {
-    R (C::*Func_)(Args...) &&;
+struct overload_elem<R (C::*)(Args...) &&>
+    : mem_fptr_wrapper<R (C::*)(Args...) &&, false, type_pack<C &&>, R,
+                       type_pack<Args...>> {};
 
-    constexpr auto operator()(C &&c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (static_cast<C &&>(c).*this->Func_)(static_cast<Args>(args)...);
-    }
-};
+/// @brief Specialization for pointer to `noexcept` non-const r-value member
+/// functions.
+/// @tparam R The function return type.
+/// @tparam ...Args The function argument types.
+/// @tparam C The class type.
+template <typename R, typename C, typename... Args>
+struct overload_elem<R (C::*)(Args...) &&noexcept>
+    : mem_fptr_wrapper<R (C::*)(Args...) &&noexcept, true, type_pack<C &&>, R,
+                       type_pack<Args...>> {};
 
 /// @brief Specialization for pointer to const r-value member functions.
 /// @tparam R The function return type.
 /// @tparam ...Args The function argument types.
 /// @tparam C The class type.
 template <typename R, typename C, typename... Args>
-struct CallableWrapper<R (C::*)(Args...) const &&> {
-    R (C::*Func_)(Args...) const &&;
+struct overload_elem<R (C::*)(Args...) const &&>
+    : mem_fptr_wrapper<R (C::*)(Args...) const &&, false, type_pack<C const &&>,
+                       R, type_pack<Args...>> {};
 
-    constexpr auto operator()(C const &&c, Args... args) const
-        /* noexcept(?) */ -> R {
-        return (static_cast<C const &&>(c).*
-                this->Func_)(static_cast<Args>(args)...);
-    }
-};
+/// @brief Specialization for pointer to `noexcept` const r-value member
+/// functions.
+/// @tparam R The function return type.
+/// @tparam ...Args The function argument types.
+/// @tparam C The class type.
+template <typename R, typename C, typename... Args>
+struct overload_elem<R (C::*)(Args...) const &&noexcept>
+    : mem_fptr_wrapper<R (C::*)(Args...) const &&noexcept, true,
+                       type_pack<C const &&>, R, type_pack<Args...>> {};
 
 /// @brief Specialization to pointer to member variable.
 /// @tparam R The member variable type.
 /// @tparam C The class type.
 template <typename R, typename C>
-struct CallableWrapper<R C::*> {
-    R C::*MemPtr_;
-
-    constexpr auto operator()(C &c) const
-        /* noexcept(?) */ -> R & {
-        return (c.*this->MemPtr_);
-    }
-
-    constexpr auto operator()(C const &c) const
-        /* noexcept(?) */ -> R const & {
-        return (c.*this->MemPtr_);
-    }
-
-    constexpr auto operator()(C &&c) const
-        /* noexcept(?) */ -> R && {
-        return (static_cast<C &&>(c).*this->MemPtr_);
-    }
-
-    constexpr auto operator()(C const &&c) const
-        /* noexcept(?) */ -> R const && {
-        return (static_cast<C const &&>(c).*this->MemPtr_);
-    }
-
-    constexpr auto operator()(C *c) const
-        /* noexcept(?) */ -> R & {
-        return (c->*this->MemPtr_);
-    }
-
-    constexpr auto operator()(C const *c) const
-        /* noexcept(?) */ -> R const & {
-        return (c->*this->MemPtr_);
-    }
-};
+struct overload_elem<R C::*> : mem_ptr_wrapper<R C::*> {};
 
 } // namespace detail
 
@@ -194,8 +169,8 @@ struct CallableWrapper<R C::*> {
 ///
 /// @tparam ...Callables The callable types.
 template <typename... Callables>
-struct TR_EMPTY_BASES overloaded : detail::CallableWrapper<Callables>... {
-    using detail::CallableWrapper<Callables>::operator()...;
+struct TR_EMPTY_BASES overloaded : detail::overload_elem<Callables>... {
+    using detail::overload_elem<Callables>::operator()...;
 };
 
 template <typename... Callables>

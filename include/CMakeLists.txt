@@ -12,6 +12,7 @@ if (MSVC)
         tr/as_array.h
         tr/at.h
         tr/combinator.h
+        tr/detail/callable_wrapper_impl.h
         tr/detail/ebo.h
         tr/detail/flat_array.h
         tr/detail/literal_parser.h
@@ -31,6 +32,7 @@ if (MSVC)
         tr/fwd/unpack.h
         tr/fwd/value_constant.h
         tr/indices_for.h
+        tr/invoke.h
         tr/is_empty.h
         tr/is_valid.h
         tr/lazy_false.h

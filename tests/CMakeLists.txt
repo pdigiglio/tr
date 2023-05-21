@@ -4,6 +4,7 @@ set(SOURCE_LIST
     ebo.cpp
     fold_left.cpp
     forward_as_base.cpp
+    invoke.cpp
     overloaded.cpp
     reverse_view.cpp
     std_integer_sequence.cpp
