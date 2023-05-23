@@ -1,12 +1,11 @@
 #include <tr/algorithm.h>
-#include <tr/algorithm/fold_left.h>
-#include <tr/algorithm/fold_left_first.h>
-#include <tr/algorithm/for_each.h>
+
 #include <tr/at.h>
 #include <tr/combinator.h>
 #include <tr/detail/ebo.h>
 #include <tr/detail/utility.h>
 #include <tr/indices_for.h>
+#include <tr/invoke.h>
 #include <tr/overloaded.h>
 #include <tr/tuple.h>
 #include <tr/tuple_protocol/built_in_array.h>
@@ -14,11 +13,10 @@
 #include <tr/tuple_protocol/std_pair.h>
 #include <tr/tuple_protocol/std_tuple.h>
 #include <tr/unpack.h>
-#include <tr/invoke.h>
 #include <tr/value_sequence.h>
 #include <tr/view/drop_view.h>
-#include <tr/view/tuple_view.h>
 #include <tr/view/reverse_view.h>
+#include <tr/view/tuple_view.h>
 
 #include <algorithm>
 #include <array>
@@ -157,24 +155,28 @@ struct length_impl<DBRow> {
 
 template <>
 struct at_impl<DBRow> {
-
     template <typename Iterable, typename Idx>
     static constexpr decltype(auto) apply(Iterable &&arr, Idx) noexcept {
-        if constexpr (Idx{} == 0) {
-            return arr.id;
-        }
 
-        if constexpr (Idx{} == 1) {
-            return arr.name;
-        }
+        tr::tuple const memPtrs{&DBRow::id, &DBRow::name, &DBRow::birthCity,
+                                &DBRow::birthCountry};
+        return tr::invoke(memPtrs[Idx{}], static_cast<Iterable &&>(arr));
 
-        if constexpr (Idx{} == 2) {
-            return arr.birthCity;
-        }
+        //if constexpr (Idx{} == 0) {
+        //    return arr.id;
+        //}
 
-        if constexpr (Idx{} == 3) {
-            return arr.birthCountry;
-        }
+        //if constexpr (Idx{} == 1) {
+        //    return arr.name;
+        //}
+
+        //if constexpr (Idx{} == 2) {
+        //    return arr.birthCity;
+        //}
+
+        //if constexpr (Idx{} == 3) {
+        //    return arr.birthCountry;
+        //}
     }
 };
 
@@ -202,7 +204,6 @@ int main() {
         std::puts(str.c_str());
     }
 
-
     array_indexing<5, 2, 3>();
 
     using tr::tuple;
@@ -218,8 +219,18 @@ int main() {
     }
 
     {
+        constexpr auto ok = tr::any_of(tr::tuple{}, [] { /* unevaluated */ });
+        static_assert(!ok);
+    }
+
+    {
         constexpr auto ok = tr::none_of(
             p, [](auto i) { return !tr::detail::is_complete_v<decltype(i)>; });
+        static_assert(ok);
+    }
+
+    {
+        constexpr auto ok = tr::none_of(tr::tuple{}, [] { /* unevaluated */ });
         static_assert(ok);
     }
 
@@ -288,30 +299,30 @@ int main() {
     }
 
     {
-        //std::string s;
-        //auto passthrough = [&]() -> decltype(auto) { return s; };
-        //using ret_t =
+        // std::string s;
+        // auto passthrough = [&]() -> decltype(auto) { return s; };
+        // using ret_t =
         //    decltype(tr::unpack(std::make_index_sequence<0>{}, passthrough));
 
-        //static_assert(std::is_same_v<ret_t, std::string &>);
+        // static_assert(std::is_same_v<ret_t, std::string &>);
 
         // IDEA: propose std::to_string(std::string) { /* passthrough */ }
         // IDEA: propose std::to_string(char const*) { /* ... */ }
-         static auto const to_str = [](auto i) {
+        static auto const to_str = [](auto i) {
             if constexpr (std::is_same_v<decltype(i), std::string>)
                 return i;
             else
                 return std::to_string(i);
         };
 
-         std::string callStack;
-         callStack = tr::fold_left(std::make_index_sequence<0>{}, callStack,
+        std::string callStack;
+        callStack = tr::fold_left(std::make_index_sequence<0>{}, callStack,
                                   [](auto &&sum, auto curr) {
                                       return "f(" + to_str(std::move(sum)) +
                                              ", " + to_str(curr) + ")";
                                   });
 
-         std::puts(callStack.c_str());
+        std::puts(callStack.c_str());
     }
 
     {

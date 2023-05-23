@@ -1,5 +1,11 @@
 #pragma once
 
+#include <tr/algorithm/all_of.h>
+#include <tr/algorithm/any_of.h>
+#include <tr/algorithm/fold_left.h>
+#include <tr/algorithm/fold_left_first.h>
+#include <tr/algorithm/for_each.h>
+
 #include <tr/detail/type_traits.h>
 #include <tr/tuple_protocol.h>
 
@@ -9,12 +15,13 @@
 namespace tr {
 // https://www.foonathan.net/2020/05/fold-tricks/
 namespace detail {
-template <typename Tuple, typename Predicate, std::size_t... Is>
-constexpr bool any_of(Tuple &&tuple, Predicate pred,
-                      std::index_sequence<Is...>) {
-    using tr::get;
-    return (pred(get<Is>(std::forward<Tuple>(tuple))) || ...);
-}
+
+// template <typename Tuple, typename Predicate, std::size_t... Is>
+// constexpr bool any_of(Tuple &&tuple, Predicate pred,
+//                      std::index_sequence<Is...>) {
+//    using tr::get;
+//    return (pred(get<Is>(std::forward<Tuple>(tuple))) || ...);
+//}
 
 template <typename Tuple, typename Predicate, std::size_t... Is>
 constexpr std::ptrdiff_t count_if(Tuple &&tuple, Predicate pred,
@@ -96,13 +103,13 @@ constexpr bool equal_pred<void>::operator()(T &&lhs, U &&rhs) const {
 }
 } // namespace detail
 
-template <typename Tuple, typename Predicate>
-constexpr bool any_of(Tuple &&tuple, Predicate pred) {
-    using tuple_t = std::remove_reference_t<Tuple>;
-    auto const tupleSize = tr::tup_size_v<tuple_t>;
-    return detail::any_of(std::forward<Tuple>(tuple), pred,
-                          std::make_index_sequence<tupleSize>{});
-}
+// template <typename Tuple, typename Predicate>
+// constexpr bool any_of(Tuple &&tuple, Predicate pred) {
+//    using tuple_t = std::remove_reference_t<Tuple>;
+//    auto const tupleSize = tr::tup_size_v<tuple_t>;
+//    return detail::any_of(std::forward<Tuple>(tuple), pred,
+//                          std::make_index_sequence<tupleSize>{});
+//}
 
 template <typename Tuple, typename Predicate>
 constexpr bool none_of(Tuple &&tuple, Predicate pred) {
