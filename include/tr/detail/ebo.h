@@ -84,19 +84,5 @@ struct ebo_traits<ebo<T, Tag, IsCompressed>> {
     static constexpr bool is_compressed{IsCompressed};
 };
 
-template <typename Ebo,
-          typename = std::enable_if_t<is_ebo_v<remove_cvref_t<Ebo>>>>
-constexpr decltype(auto) get_ebo_val(Ebo &&e) noexcept {
-    using ebo_traits_t = ebo_traits<remove_cvref_t<Ebo>>;
-
-    if constexpr (ebo_traits_t::is_compressed) {
-        using ebo_value_t = typename ebo_traits_t::type;
-        return forward_as_base<ebo_value_t, Ebo>(e);
-    } else {
-        return (std::forward<Ebo>(e).Val_);
-        //     ^ parenthesis preserve value category in the return type.
-    }
-}
-
 } // namespace detail
 } // namespace tr

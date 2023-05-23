@@ -3,9 +3,9 @@
 #include <tr/type_constant.h>
 #include <tr/value_constant.h>
 
+using tr::type_c;
 using tr::detail::ebo;
 using tr::detail::ebo_traits;
-using tr::type_c;
 
 namespace {
 
@@ -26,21 +26,9 @@ template <typename T>
     return tr::true_c;
 }
 
-template <typename...>
-class type_displayer;
-
-template <typename T, typename U>
-[[nodiscard]] constexpr auto same_ebo_val_type(T &&uncompressedEbo,
-                                               U &&compressedEbo) noexcept {
-    using type0 = decltype(get_ebo_val(std::forward<T>(uncompressedEbo)));
-    using type1 = decltype(get_ebo_val(std::forward<U>(compressedEbo)));
-    using type2 = decltype((std::forward<T>(uncompressedEbo).Val_));
-    return type_c<type0> == type_c<type1> && type_c<type1> == type_c<type2>;
-}
-
 template <typename T, typename U>
 [[nodiscard]] constexpr auto same_value_type(T &&uncompressedEbo,
-                                               U &&compressedEbo) noexcept {
+                                             U &&compressedEbo) noexcept {
     using type0 = decltype(std::forward<T>(uncompressedEbo).value());
     using type1 = decltype(std::forward<U>(compressedEbo).value());
     using type2 = decltype((std::forward<T>(uncompressedEbo).Val_));
@@ -58,13 +46,6 @@ struct TestEbo {
             ebo<S, tag_t, true> ec{};
             ebo<S, tag_t, false> e{};
 
-            static_assert(same_ebo_val_type(e, ec));
-            static_assert(
-                same_ebo_val_type(std::as_const(e), std::as_const(ec)));
-            static_assert(same_ebo_val_type(std::move(e), std::move(ec)));
-            static_assert(same_ebo_val_type(std::move(std::as_const(e)),
-                                            std::move(std::as_const(ec))));
-
             static_assert(same_value_type(e, ec));
             static_assert(same_value_type(std::as_const(e), std::as_const(ec)));
             static_assert(same_value_type(std::move(e), std::move(ec)));
@@ -75,9 +56,9 @@ struct TestEbo {
         {
             ebo<S, tag_t> e{};
             static_assert(std::is_same_v<decltype(e.value()), S &>);
-            static_assert(std::is_same_v<decltype(std::as_const(e).value()), S const &>);
             static_assert(
-                std::is_same_v<decltype(std::move(e).value()), S &&>);
+                std::is_same_v<decltype(std::as_const(e).value()), S const &>);
+            static_assert(std::is_same_v<decltype(std::move(e).value()), S &&>);
             static_assert(
                 std::is_same_v<decltype(std::move(std::as_const(e)).value()),
                                S const &&>);
