@@ -41,6 +41,7 @@ if (MSVC)
         tr/length.h
         tr/macros.h
         tr/overloaded.h
+        tr/overload.h
         tr/tuple.h
         tr/tuple_protocol.h
         tr/tuple_protocol/built_in_array.h
