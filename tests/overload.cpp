@@ -8,6 +8,8 @@ void foo(T) noexcept {}
 void f(int) {}
 void f(double) {}
 void f(char) {}
+void f(...) {}
+void f(char const *, ...) {}
 
 struct S {
 
@@ -41,6 +43,14 @@ struct TestOverload {
             void (*f_double)(double) = f;
             f_double = tr::overload<void(double)>(f);
             (void)f_double;
+
+            void (*f_ellipsis)(...) = f;
+            f_ellipsis = tr::overload<void(...)>(f);
+            (void)f_ellipsis;
+
+            void (*f_char_star_ellipsis)(char const *, ...) = f;
+            f_char_star_ellipsis = tr::overload<void(char const *, ...)>(f);
+            (void)f_char_star_ellipsis;
         }
 
         {
