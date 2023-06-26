@@ -6,7 +6,12 @@ project(${PROJ_NAME} VERSION 0.0.0 LANGUAGES CXX)
 add_library(tr INTERFACE)
 target_include_directories(tr INTERFACE include)
 target_compile_features(tr INTERFACE cxx_std_17)
+    
+    # Add include/ subdir to have VS show the header files.
+option(LIBTR_COMPILE_TESTS "Build the trlib tests" OFF)
 
-# Add include/ subdir to have VS show the header files.
 add_subdirectory(include)
-add_subdirectory(tests)
+
+if(LIBTR_COMPILE_TESTS)
+    add_subdirectory(tests)
+endif()
