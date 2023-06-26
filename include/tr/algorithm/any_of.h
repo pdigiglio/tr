@@ -1,3 +1,4 @@
+#pragma once
 #include <tr/algorithm/fwd/any_of.h>
 
 #include <tr/detail/type_traits.h>
