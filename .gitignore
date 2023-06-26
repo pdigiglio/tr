@@ -3,3 +3,11 @@ html/*
 build
 .vscode
 *.out
+_deps
+*.vcxproj
+*.filters
+*.cmake
+*.rule
+CMakeFiles
+CMakeCache.txt
+*.sln

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.14.0)
 
 set(PROJ_NAME "tr")
 project(${PROJ_NAME} VERSION 0.0.0 LANGUAGES CXX)
