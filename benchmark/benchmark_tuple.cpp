@@ -1,18 +1,20 @@
+
+#include <tr/tuple.h>
+
+
+#include <string>
+#include <tuple>
+
 #include <benchmark/benchmark.h>
 
-static void BM_StringCreation(benchmark::State& state) {
-  for (auto _ : state)
-    std::string empty_string;
-}
-// Register the function as a benchmark
-BENCHMARK(BM_StringCreation);
 
-// Define another benchmark
-static void BM_StringCopy(benchmark::State& state) {
-  std::string x = "hello";
+static void TR_TupleSimpleTypeAssignment(benchmark::State& state) {
+  tr::tuple<int, int> t{-1, 1};
+  tr::tuple<int, int> t2{-2, 2};
   for (auto _ : state)
-    std::string copy(x);
+    benchmark::DoNotOptimize(t = t2);
 }
-BENCHMARK(BM_StringCopy);
+
+BENCHMARK(TR_TupleSimpleTypeAssignment);
 
 BENCHMARK_MAIN();

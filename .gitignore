@@ -6,7 +6,6 @@ build
 _deps
 *.vcxproj
 *.filters
-*.cmake
 *.rule
 CMakeFiles
 CMakeCache.txt

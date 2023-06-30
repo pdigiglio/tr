@@ -7,6 +7,11 @@ cmake . -DLIBTR_COMPILE_TESTS=ON -B build -G Ninja
 cmake --build build
 ```
 
+for benchmarking
+```
+cmake . -DLIBTR_COMPILE_BENCH=ON -B build -G Ninja
+cmake --build build --config Release //for release version to benchmark
+```
 
 // TODO:
 // tr::tuple
